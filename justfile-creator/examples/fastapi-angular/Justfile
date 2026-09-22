@@ -1,0 +1,215 @@
+set minimum-version := "1.58.0"
+set dotenv-load
+set default-list
+set ignore-comments
+set shell := ["bash", "-cu"]
+
+API_HOST := env("API_HOST", "0.0.0.0")
+API_PORT := env("API_PORT", "8000")
+WEB_PORT := env("WEB_PORT", "4200")
+
+# ── Dev ───────────────────────────────────────────────────────────────────────
+
+# Démarrer le serveur FastAPI
+[group('dev')]
+[working-directory('api')]
+dev-api:
+    uv run uvicorn main:app --reload --host {{ API_HOST }} --port {{ API_PORT }}
+
+# Démarrer le serveur Angular
+[group('dev')]
+[working-directory('web')]
+dev-web:
+    pnpm start
+
+# Démarrer les deux serveurs en parallèle
+[group('dev')]
+dev:
+    just dev-api & just dev-web
+
+# Arrêter le serveur FastAPI
+[group('dev')]
+[windows]
+stop-api:
+    # `//` : depuis Git Bash, MSYS convertirait `/PID` en chemin Windows
+    -netstat -ano | awk '/:{{ API_PORT }} .*LISTENING/ {print $NF}' | sort -u | xargs -r -I{} taskkill //PID {} //T //F
+
+# Arrêter le serveur FastAPI
+[group('dev')]
+[unix]
+stop-api:
+    -pkill -f "uvicorn main:app"
+
+# Arrêter le serveur Angular
+[group('dev')]
+[windows]
+stop-web:
+    -netstat -ano | awk '/:{{ WEB_PORT }} .*LISTENING/ {print $NF}' | sort -u | xargs -r -I{} taskkill //PID {} //T //F
+
+# Arrêter le serveur Angular
+[group('dev')]
+[unix]
+stop-web:
+    -pkill -f "ng serve"
+
+# Arrêter les deux serveurs
+[group('dev')]
+stop: stop-api stop-web
+
+# ── Quality ───────────────────────────────────────────────────────────────────
+
+# Builder le frontend Angular
+[group('quality')]
+[working-directory('web')]
+build:
+    pnpm build
+
+# Linter le backend (ne réécrit rien)
+[group('quality')]
+[working-directory('api')]
+lint-api:
+    uv run ruff check .
+    uv run ruff format --check .
+
+# Linter le frontend (ne réécrit rien)
+[group('quality')]
+[working-directory('web')]
+lint-web:
+    pnpm exec ng lint --max-warnings 0
+    pnpm exec prettier --check .
+
+# Lint des workflows GitHub Actions
+[group('quality')]
+lint-workflows:
+    actionlint
+
+# Linter tout le code et les workflows
+[group('quality')]
+[parallel]
+lint: lint-api lint-web lint-workflows
+
+# Reformater le backend et appliquer les fixes ruff auto-corrigeables
+[group('quality')]
+[working-directory('api')]
+format-api:
+    uv run ruff format .
+    uv run ruff check --fix .
+
+# Reformater le frontend
+[group('quality')]
+[working-directory('web')]
+format-web:
+    pnpm exec prettier --write .
+
+# Reformater tout le code
+[group('quality')]
+[parallel]
+format: format-api format-web
+
+# Typage backend (mypy)
+[group('quality')]
+[working-directory('api')]
+typecheck-api:
+    uv run mypy .
+
+# Typage frontend (tsc, hors templates)
+[group('quality')]
+[working-directory('web')]
+typecheck-web:
+    pnpm exec tsc --noEmit -p tsconfig.app.json
+
+# Typage des deux zones
+[group('quality')]
+[parallel]
+typecheck: typecheck-api typecheck-web
+
+# Tests backend (pytest, TestClient FastAPI)
+[group('quality')]
+[working-directory('api')]
+test-api:
+    uv run pytest
+
+# Tests frontend (Vitest via Angular CLI, sans watch)
+[group('quality')]
+[working-directory('web')]
+test-web:
+    pnpm exec ng test --watch=false
+
+# Tous les tests
+[group('quality')]
+[parallel]
+test: test-api test-web
+
+# Vulnérabilités des dépendances backend
+[group('quality')]
+[working-directory('api')]
+audit-api:
+    uv audit --frozen --preview-features audit-command
+
+# Vulnérabilités des dépendances frontend
+[group('quality')]
+[working-directory('web')]
+audit-web:
+    pnpm audit --audit-level=high
+
+# Vulnérabilités des dépendances des deux zones
+[group('quality')]
+[parallel]
+audit: audit-api audit-web
+
+# ── DB ────────────────────────────────────────────────────────────────────────
+
+# Démarrer Postgres + appliquer les migrations existantes (DB prête, idempotent)
+[group('db')]
+[working-directory('api')]
+db:
+    docker compose up -d --wait postgres
+    uv run alembic upgrade head
+
+# Créer une migration Alembic depuis les modèles
+[group('db')]
+[working-directory('api')]
+db-migrate LABEL:
+    uv run alembic revision --autogenerate -m "{{ LABEL }}"
+
+# Réinitialiser la base de données (downgrade + upgrade)
+[confirm('Réinitialiser la DB ? Toutes les données locales seront perdues.')]
+[group('db')]
+[working-directory('api')]
+db-reset:
+    uv run alembic downgrade base
+    uv run alembic upgrade head
+
+# ── Setup ─────────────────────────────────────────────────────────────────────
+
+# Installer les dépendances backend, groupe dev compris
+[group('setup')]
+[working-directory('api')]
+install-api:
+    uv sync --all-groups
+
+# Installer les dépendances frontend
+[group('setup')]
+[working-directory('web')]
+install-web:
+    pnpm install
+
+# Installer toutes les dépendances
+[group('setup')]
+[parallel]
+install: install-api install-web
+
+# Setup complet : dépendances puis base prête
+[group('setup')]
+setup: install db
+
+# Vérifier que l'environnement local est prêt : sortie vide = rien à signaler
+[group('setup')]
+check:
+    @command -v uv >/dev/null 2>&1 || echo "⚠️ uv requis"
+    @command -v pnpm >/dev/null 2>&1 || echo "⚠️ pnpm requis"
+    @command -v actionlint >/dev/null 2>&1 || echo "⚠️ actionlint requis pour just lint-workflows (winget install rhysd.actionlint)"
+    @[ -d api/.venv ] || echo "⚠️ Environnement backend absent, lancer just install-api"
+    @[ -d web/node_modules ] || echo "⚠️ Dépendances frontend absentes, lancer just install-web"
+    @[ -f api/.env ] || echo "⚠️ api/.env manquant, copier api/.env.example"
+    @docker info >/dev/null 2>&1 || echo "⚠️ Docker non disponible"

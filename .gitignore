@@ -1,0 +1,6 @@
+# Local History VSCode
+**/.history/
+
+# Artefacts Python
+__pycache__/
+*.py[cod]

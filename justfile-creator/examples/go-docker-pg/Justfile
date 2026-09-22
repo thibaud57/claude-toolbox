@@ -1,0 +1,138 @@
+set minimum-version := "1.58.0"
+set dotenv-load
+set dotenv-required
+set default-list
+set ignore-comments
+set shell := ["bash", "-cu"]
+set script-interpreter := ["bash", "-eu"]
+
+PORT := env("PORT", "8080")
+
+# ── Dev ───────────────────────────────────────────────────────────────────────
+
+# Démarrer le serveur Go
+[group('dev')]
+dev:
+    go run ./cmd/server
+
+# Arrêter le serveur Go
+[group('dev')]
+[windows]
+stop:
+    # `//` : depuis Git Bash, MSYS convertirait `/PID` en chemin Windows
+    -netstat -ano | awk '/:{{ PORT }} .*LISTENING/ {print $NF}' | sort -u | xargs -r -I{} taskkill //PID {} //T //F
+
+# Arrêter le serveur Go
+[group('dev')]
+[unix]
+stop:
+    -pkill -f "go run ./cmd/server"
+
+# ── Quality ───────────────────────────────────────────────────────────────────
+
+# Compiler le binaire
+[group('quality')]
+build:
+    go build -o bin/server ./cmd/server
+
+# Lint du code
+[group('quality')]
+lint:
+    # `run` execute aussi les formateurs configures depuis la v2 : rien a verifier en plus
+    golangci-lint run ./...
+    actionlint
+
+# Reformate le code
+[group('quality')]
+format:
+    golangci-lint fmt
+
+# Vulnerabilites des dependances
+[group('quality')]
+audit:
+    govulncheck ./...
+
+# Tests unitaires
+[group('quality')]
+test-unit:
+    go test ./... -run Unit
+
+# Tests d'intégration (DB de test via .env.test)
+[group('quality')]
+[script]
+test-integration:
+    set -a && . ./.env.test && set +a
+    go test ./... -run Integration
+
+# Tous les tests
+[group('quality')]
+test: test-unit test-integration
+
+# ── Infrastructure ────────────────────────────────────────────────────────────
+
+# Démarrer les services Docker
+[group('infra')]
+docker-up:
+    docker compose up -d
+
+# Arrêter les services Docker
+[group('infra')]
+docker-down:
+    docker compose down
+
+# ── DB ────────────────────────────────────────────────────────────────────────
+
+# Appliquer les migrations
+[group('db')]
+db-migrate:
+    migrate -path db/migrations -database "$DATABASE_URL" up
+
+# Réinitialiser la base de données (drop + recreate + migrate)
+[confirm('Réinitialiser la DB ? Toutes les données locales seront perdues.')]
+[group('db')]
+db-reset:
+    migrate -path db/migrations -database "$DATABASE_URL" drop -f
+    migrate -path db/migrations -database "$DATABASE_URL" up
+
+# Démarrer les services backing + appliquer les migrations existantes (DB prête, idempotent)
+[group('db')]
+db:
+    docker compose up -d --wait postgres
+    just db-migrate
+
+# Migrer la DB test (à relancer après chaque nouvelle migration locale)
+[group('db')]
+[script]
+db-test:
+    docker compose up -d --wait postgres
+    set -a && . ./.env.test && set +a
+    migrate -path db/migrations -database "$DATABASE_URL" up
+
+# Réinitialiser la DB test (drop + recreate + migrate, sans seed)
+[confirm('Réinitialiser la DB de test ?')]
+[group('db')]
+[script]
+db-test-reset:
+    set -a && . ./.env.test && set +a
+    migrate -path db/migrations -database "$DATABASE_URL" drop -f
+    migrate -path db/migrations -database "$DATABASE_URL" up
+
+# ── Setup ─────────────────────────────────────────────────────────────────────
+
+# Télécharger les dépendances
+[group('setup')]
+install:
+    go mod download
+
+# Setup complet : install + services Docker + migrations
+[group('setup')]
+setup: install db
+
+# Vérifier que l'environnement local est prêt : sortie vide = rien à signaler
+[group('setup')]
+check:
+    @command -v go >/dev/null 2>&1 || echo "⚠️ Go requis"
+    @command -v actionlint >/dev/null 2>&1 || echo "⚠️ actionlint requis pour just lint (winget install rhysd.actionlint)"
+    @command -v govulncheck >/dev/null 2>&1 || echo "⚠️ govulncheck requis pour just audit (go install golang.org/x/vuln/cmd/govulncheck@latest)"
+    @docker info > /dev/null 2>&1 || echo "⚠️ Docker non disponible"
+    @nc -z localhost 5432 2>/dev/null || echo "⚠️ PostgreSQL non disponible"

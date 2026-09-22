@@ -1,0 +1,132 @@
+set minimum-version := "1.58.0"
+set dotenv-load
+set dotenv-required # si un service passe sa connexion par .env
+set default-list
+set ignore-comments
+set shell := ["bash", "-cu"]
+set script-interpreter := ["bash", "-eu"] # si une recette porte [script]
+
+PORT := env("PORT", "<défaut>") # serveur seulement, cf. § Règles > Header
+
+# ── Dev ───────────────────────────────────────────────────────────────────────
+
+# Démarrer <description du serveur/service>
+[group('dev')]
+dev:
+    <commande de démarrage selon STACK>
+
+# Arrêter <description du serveur>
+[group('dev')]
+[windows]
+stop:
+    # `//` : depuis Git Bash, MSYS convertirait `/PID` en chemin Windows
+    -netstat -ano | awk '/:{{ PORT }} .*LISTENING/ {print $NF}' | sort -u | xargs -r -I{} taskkill //PID {} //T //F
+
+# Arrêter <description du serveur>
+[group('dev')]
+[unix]
+stop:
+    -pkill -f "<process>"
+
+# ── Quality ───────────────────────────────────────────────────────────────────
+
+# Compiler le projet
+[group('quality')]
+build:
+    <commande build selon STACK>
+
+# Lint + vérification du formatage (ne réécrit rien)
+[group('quality')]
+lint:
+    <commande lint selon STACK>
+    <commande de vérification du formatage>
+    actionlint # si .github/workflows existe
+
+# Reformate le code et applique les fixes auto-corrigeables
+[group('quality')]
+format:
+    <commande de formatage selon STACK>
+
+# Vérifier les types
+[group('quality')]
+typecheck:
+    <commande typecheck selon STACK>
+
+# Tests <type1>
+[group('quality')]
+test-<type1>:
+    <commande test>
+
+# Tests <type2>, sur l'env <scope>
+[group('quality')]
+[script]
+test-<type2>:
+    set -a && . ./.env.<scope> && set +a
+    <commande test>
+
+# Tous les tests
+[group('quality')]
+test: test-<type1> test-<type2>
+
+# Vulnérabilités des dépendances
+[group('quality')]
+audit:
+    <commande audit du PM>
+
+# ── Infrastructure ────────────────────────────────────────────────────────────
+
+# Démarrer tous les services Docker
+[group('infra')]
+docker-up:
+    docker compose up -d
+
+# Arrêter les services Docker
+[group('infra')]
+docker-down:
+    docker compose down
+
+# Suivre les logs des services Docker
+[group('infra')]
+docker-logs:
+    docker compose logs -f
+
+# ── DB ────────────────────────────────────────────────────────────────────────
+
+# Démarrer les services backing + appliquer les migrations existantes (DB prête, idempotent)
+[group('db')]
+db:
+    docker compose up -d --wait <db-service>
+    <commande migrate deploy ORM>
+
+# Créer et appliquer une migration
+[group('db')]
+db-migrate:
+    <commande migration CLI>
+
+# Réinitialiser la DB (drop + recreate + migrate)
+[confirm('Réinitialiser la DB ? Toutes les données locales seront perdues.')]
+[group('db')]
+db-reset:
+    <commande reset>
+
+# ── Setup ─────────────────────────────────────────────────────────────────────
+
+# Installer les dépendances
+[group('setup')]
+install:
+    <commande install selon PM>
+
+# Setup complet : <ce qu'il enchaîne>
+[group('setup')]
+setup: <dépendances>
+
+# Vérifier que l'environnement local est prêt : sortie vide = rien à signaler
+[group('setup')]
+check:
+    @command -v <runtime> >/dev/null 2>&1 || echo "⚠️ <runtime> requis"
+    @<vérification dépendances> || echo "⚠️ dépendances absentes, lancer just install"
+    @command -v actionlint >/dev/null 2>&1 || echo "⚠️ actionlint requis pour just lint (winget install rhysd.actionlint)" # si .github/workflows existe
+    @[ -n "${<VAR requise>:-}" ] || echo "⚠️ <VAR requise> manquant dans .env" # une ligne par variable requise
+    @<check service1> || echo "⚠️ <service1> non disponible"
+    @<check service2> || echo "⚠️ <service2> non disponible"
+    @<test de présence de l'artefact croisé> || echo "⚠️ <artefact> absent, lancer just setup" # si setup en construit un
