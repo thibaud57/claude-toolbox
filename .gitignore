@@ -1,6 +1,2 @@
-# Local History VSCode
+# Local History VSCode, créé là où on édite, donc aussi derrière les junctions
 **/.history/
-
-# Artefacts Python
-__pycache__/
-*.py[cod]
