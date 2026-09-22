@@ -140,3 +140,9 @@ Utilisés automatiquement par `/create-lesson`, jamais invoqués directement.
 | `lesson/writer` | Rédige une leçon à partir du plan |
 | `lesson/auditor` | Audite une leçon (format, exactitude technique, cohérence avec le plan) |
 | `lesson/coherence-auditor` | Audite la cohérence globale de toutes les leçons d'une techno (doublons, couverture, renvois) |
+
+---
+
+## Partage
+
+Le skill, la commande et les agents de ce depot sont publies dans [claude-toolbox](https://github.com/thibaud57/claude-toolbox), sous `lessons/`. La publication se fait toute seule au merge d'une PR sur ce depot : les lecons, les plans et l'index restent prives, seule la partie outillage part.
