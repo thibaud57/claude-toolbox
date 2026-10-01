@@ -51,7 +51,7 @@ Ta mission est de générer une ou plusieurs leçons pédagogiques à partir d'u
 1.1. **Lancer les sub-agents `lesson/writer`** EN PARALLELE (1 par leçon)
    - Pour chaque `lesson_id` dans `lessons_to_process` :
      - Params : `plan_file`, `lesson_id`
-   - Lancer tous les agents dans un même message multi-tool-use via `Task`
+   - Lancer tous les agents dans un même message multi-tool-use via `Agent`
 
 1.2. **Attendre que tous les writers terminent**
 
@@ -64,7 +64,7 @@ Ta mission est de générer une ou plusieurs leçons pédagogiques à partir d'u
    - Pour chaque writer en `error`, afficher `id` + `error_message`
    - Demander au user ce qu'il veut faire :
      - `continuer` → passer en Phase 2 avec les writers `success` uniquement (les `error` sont abandonnés, reportés en Phase 5)
-     - `retry errors` → re-spawn les `lesson/writer` en erreur via `Task`, attendre, mettre à jour la liste success/error, reboucler sur ce même bilan
+     - `retry errors` → re-spawn les `lesson/writer` en erreur via `Agent`, attendre, mettre à jour la liste success/error, reboucler sur ce même bilan
      - `abort` → arrêter le workflow complet, pas de Phase 2 ni 3, rapport final listant les écrits et les échecs
    - SI tous les writers sont en `error` : ne pas proposer `continuer`, uniquement `retry` ou `abort`
    - SI tous les writers sont `success` : passer directement en Phase 2 sans demander (pas de dialogue inutile)
@@ -78,7 +78,7 @@ Ta mission est de générer une ou plusieurs leçons pédagogiques à partir d'u
 2.2. **Lancer les sub-agents `lesson/auditor`** EN PARALLELE (1 par leçon en success)
    - Pour chaque leçon `success` de Phase 1 :
      - Params : `lesson_path` = `<writer.file>`, `plan_file` = `<plan_file>`, `lesson_id` = `<writer.id>`
-   - Lancer tous les agents dans un même message multi-tool-use via `Task`
+   - Lancer tous les agents dans un même message multi-tool-use via `Agent`
 
 2.3. **Attendre tous les auditors**
 
@@ -91,7 +91,7 @@ Ta mission est de générer une ou plusieurs leçons pédagogiques à partir d'u
    - Pour les leçons en `error` (audit impossible, problème système) : reporter automatiquement dans Phase 5, pas de dialogue de correction possible
    - Pour les leçons en `warn` ou `fail`, demander au user ce qu'il veut faire, par leçon si nécessaire :
      - `continuer tel quel` → la leçon passe en Phase 3 (les `fail` sont exclus, les `warn`/`pass` inclus)
-     - `corriger` → relancer `lesson/writer` pour la leçon via `Task` (le writer re-rédige depuis zéro en tenant compte des issues remontées), puis relancer `lesson/auditor` sur le nouveau fichier pour re-valider. L'auditor ne corrige JAMAIS lui-même, seul le writer peut modifier le fichier. Si le re-run writer retourne `error` (LLM timeout, erreur réseau, etc.) OU si le re-audit retourne à nouveau `fail`, re-ouvrir ce dialogue 2.5 pour la leçon (le user peut choisir `continuer tel quel`, re-tenter `corriger`, ou `exclure`). Pas de boucle auto, le user contrôle à chaque itération
+     - `corriger` → relancer `lesson/writer` pour la leçon via `Agent` (le writer re-rédige depuis zéro en tenant compte des issues remontées), puis relancer `lesson/auditor` sur le nouveau fichier pour re-valider. L'auditor ne corrige JAMAIS lui-même, seul le writer peut modifier le fichier. Si le re-run writer retourne `error` (LLM timeout, erreur réseau, etc.) OU si le re-audit retourne à nouveau `fail`, re-ouvrir ce dialogue 2.5 pour la leçon (le user peut choisir `continuer tel quel`, re-tenter `corriger`, ou `exclure`). Pas de boucle auto, le user contrôle à chaque itération
      - `exclure` → marquer la leçon comme exclue de la consolidation quel que soit son statut auditor (le fichier reste sur disque mais non référencé dans l'index)
    - Attendre validation AVANT de passer à Phase 3
 
@@ -106,7 +106,7 @@ Ta mission est de générer une ou plusieurs leçons pédagogiques à partir d'u
    - Leçons existantes déjà présentes dans l'index pour la techno cible
    - Construire la liste `lessons_paths` : union des 2 listes ci-dessus avec les chemins relatifs de chaque fichier leçon
 
-3.3. **Lancer `lesson/coherence-auditor`** via `Task` (1 seul spawn, pas de parallélisation car c'est un audit global unique)
+3.3. **Lancer `lesson/coherence-auditor`** via `Agent` (1 seul spawn, pas de parallélisation car c'est un audit global unique)
    - Params : `plan_file`, `techno`, `lessons_paths`
    - Attendre le retour JSON
 
@@ -120,7 +120,7 @@ Ta mission est de générer une ou plusieurs leçons pédagogiques à partir d'u
    - SI `warn` → afficher les `recommendations`, demander au user `continuer` ou `corriger certaines leçons`
    - SI `fail` → dialogue obligatoire :
      - `continuer tel quel` → passer à Phase 4 pour consolidation malgré les issues (user assume)
-     - `corriger` → re-run `lesson/writer` pour les leçons concernées (via `Task`), puis re-run `lesson/auditor` individuel sur ces leçons, puis re-run `lesson/coherence-auditor` global pour re-valider la cohérence. Si re-audit cohérence retourne encore `fail`, re-ouvrir ce dialogue 3.5 (pas de boucle auto, user contrôle à chaque itération). Note : ce dialogue n'a lieu qu'en mode audit activé (sinon toute la Phase 3 est skippée par `--skip-audit`)
+     - `corriger` → re-run `lesson/writer` pour les leçons concernées (via `Agent`), puis re-run `lesson/auditor` individuel sur ces leçons, puis re-run `lesson/coherence-auditor` global pour re-valider la cohérence. Si re-audit cohérence retourne encore `fail`, re-ouvrir ce dialogue 3.5 (pas de boucle auto, user contrôle à chaque itération). Note : ce dialogue n'a lieu qu'en mode audit activé (sinon toute la Phase 3 est skippée par `--skip-audit`)
      - `exclure` → marquer une ou plusieurs leçons comme exclues de la consolidation (fichiers restent sur disque, non référencés dans l'index)
    - SI `error` (audit cohérence impossible, problème système) → reporter dans Phase 5, pas de dialogue de correction. Consolider quand même si le user l'autorise (dialogue : `continuer sans audit cohérence` / `abort`)
    - Attendre validation AVANT de passer à Phase 4
