@@ -2,7 +2,7 @@
 
 ## Contexte
 
-Création de fiches de révision denses (format skill `prof`) pour développeurs mid/senior, basées sur [source : cours Udemy "..." / documentation officielle / autre], enrichies par des recherches sur les nouveautés [version cible] non couvertes par la source.
+Création de fiches de révision denses (format skill `lesson-doc`) pour développeurs mid/senior, basées sur [source : cours Udemy "..." / documentation officielle / autre], enrichies par des recherches sur les nouveautés [version cible] non couvertes par la source.
 
 **[Résumer le périmètre retenu : ex "Le cours compte X sections, dont seules les sections Y à Z sont retenues."]**
 
@@ -59,17 +59,17 @@ Création de fiches de révision denses (format skill `prof`) pour développeurs
 
 ---
 
-## Versions cibles *(optionnel — si plusieurs technos ou version non précisée dans le contexte)*
+## Versions cibles
 
-| Techno | `last_version` | Notes |
-|--------|----------------|-------|
-| `{techno}` | `"{version}"` | [Note] |
+| Techno | Section index | Dossier | Leçons | `last_version` | Notes |
+|--------|---------------|---------|--------|----------------|-------|
+| `{slug}` | `{slug}` (racine) ou `{parent}.{slug}` (sous-techno) | `lessons/{slug}/` ou `lessons/{parent}/{slug}/` | toutes, ou `[slug-lecon, ...]` | `"{major.minor}"` | [Note] |
 
-Le champ `last_version` doit être écrit **par leçon** dans l'index.
+Le champ `last_version` doit être écrit **par leçon** dans l'index. Une ligne par techno du plan ; une leçon qui suit un outil distinct (cf. skill lesson-doc § Règles leçon > Index) a sa propre ligne, qui la cite dans la colonne Leçons. Plusieurs technos peuvent partager une même section d'index (ex : leçons React rangées dans `nextjs`) : la colonne Section index fait foi.
 
 ---
 
-## Leçons {Techno} (techno={slug}, last_version="{version}")
+## Leçons {Techno} (techno={slug}, last_version="{major.minor}")
 
 ### 1. slug-lecon-1
 
@@ -98,6 +98,16 @@ Le champ `last_version` doit être écrit **par leçon** dans l'index.
 
 ---
 
+## Matrice concept → leçon canonique
+
+Chaque concept partagé entre plusieurs leçons est **canonique dans UNE leçon** (traité à fond) et seulement mentionné ailleurs (1-2 bullets avec renvoi). Lue par `lesson/writer`, `lesson/auditor` et `lesson/coherence-auditor`.
+
+| Concept | Canonique dans | Mentionné aussi dans |
+|---------|----------------|----------------------|
+| `[concept partagé]` | `[slug-lecon]` | `[slug-lecon]` ([usage]) ou "(nulle part ailleurs)" |
+
+---
+
 ## Dépréciations et breaking changes critiques à signaler *(optionnel — si nombreuses dépréciations)*
 
 | Ancien | Nouveau | Leçon impactée |
@@ -108,15 +118,15 @@ Le champ `last_version` doit être écrit **par leçon** dans l'index.
 
 ## Fichiers critiques à consulter avant exécution
 
-- `.claude/skills/prof/SKILL.md` : spec complète du skill `prof` (workflow CREATE, conventions de format, règles de recherche)
-- `.claude/skills/prof/templates/lesson.md` : template de structure d'une leçon
+- `.claude/skills/lesson-doc/SKILL.md` : conventions de format, règles de recherche et d'index ; `.claude/skills/prof/SKILL.md` : workflow CREATE
+- `.claude/skills/lesson-doc/templates/lesson.md` : template de structure d'une leçon
 - `lessons/index.yaml` : index global (à enrichir avec techno `{slug}`)
-- `lessons/{slug}/` : dossier destination des [X] fichiers `<id>.md` (à créer)
+- Dossier de chaque techno (colonne Dossier de § Versions cibles) : destination des [X] fichiers `<id>.md`
 
 ## Vérification du plan (end-to-end)
 
-1. **Structure fichiers** : `lessons/{slug}/` doit contenir [X] fichiers `.md` en kebab-case ([liste des slugs])
-2. **Index YAML** : `lessons/index.yaml` doit contenir une nouvelle entrée `{slug}:` avec [X] leçons, chacune avec `id`, `file`, `concepts`, `last_version: "{version}"`, `last_updated`
+1. **Structure fichiers** : le dossier de la techno (cf. § Versions cibles) doit contenir [X] fichiers `.md` en kebab-case ([liste des slugs])
+2. **Index YAML** : `lessons/index.yaml` doit contenir, dans la section indiquée par § Versions cibles (imbriquée pour une sous-techno), [X] leçons chacune avec `id`, `file`, `concepts`, `last_version: "{major.minor}"`, `last_updated`
 3. **Ordre recommandé de création** : L1 → L[X] dans l'ordre (progression pédagogique)
 4. **Sondage qualité** : relire [les leçons les plus denses ou les plus fusionnées] pour vérifier cohérence et équilibre
 5. **Cohérence version** : chaque mention de [technologie/version clé] doit être cohérente entre toutes les leçons

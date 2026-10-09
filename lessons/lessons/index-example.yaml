@@ -1,2 +1,46 @@
 # Index des leçons — copier ce fichier en lessons/index.yaml pour démarrer
-# Format attendu : voir README.md section "L'index"
+# Champs maintenus par le skill prof (cf. .claude/skills/lesson-doc/SKILL.md § Règles leçon > Index) et les commandes /create-lesson et /update-lesson
+
+python:                                     # techno : dossier lessons/<techno>/
+  notion_id: "..."                          # optionnel : page Notion parente
+  icon: "https://..."                       # optionnel : icône de la page Notion
+  cover: "https://..."                      # optionnel : couverture de la page Notion
+  last_updated: "2026-05-28"                # date de la dernière leçon touchée (contenu ou bump de version), sous-technos comprises
+  lessons:
+    - id: fondamentaux                      # kebab-case du titre
+      notion_id: "..."                      # absent tant que la leçon n'est pas publiée sur Notion
+      file: lessons/python/fondamentaux.md
+      concepts: [data model, mutabilité, walrus, f-strings]
+      last_version: "3.14"                  # major.minor sans patch (cf. skill lesson-doc § Règles leçon > Recherches)
+      last_updated: "2026-05-28"            # date de dernière modification du .md
+
+java:
+  last_updated: "2026-04-07"
+  lessons:
+    - id: fondamentaux
+      file: lessons/java/fondamentaux.md
+      concepts: [JVM, types primitifs, String pool]
+      last_version: "26"                    # majeur seul : la techno ne publie que des majeures
+      last_updated: "2026-04-03"
+    - id: maven
+      file: lessons/java/maven.md
+      concepts: [pom.xml, lifecycle, dependency scope]
+      last_version: "3.9"                   # outil distinct avec son propre cycle de release
+      last_updated: "2026-04-03"
+  spring:                                   # sous-techno : dossier lessons/<techno>/<sous-techno>/, mêmes champs qu'une techno
+    last_updated: "2026-04-07"
+    lessons:
+      - id: introduction
+        file: lessons/java/spring/introduction.md
+        concepts: [IoC, DI, ApplicationContext]
+        last_version: {framework: "7.0", boot: "4.0"}   # objet : plusieurs composants au cœur du contenu
+        last_updated: "2026-04-07"
+
+github-actions:
+  last_updated: "2026-04-07"
+  lessons:
+    - id: introduction
+      file: lessons/github-actions/introduction.md
+      concepts: [workflow, job, step, runner]
+      last_version: null                    # indéterminable : toujours incluse en mode UPDATE
+      last_updated: "2026-04-07"

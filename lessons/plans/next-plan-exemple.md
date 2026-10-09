@@ -2,7 +2,7 @@
 
 ## Contexte
 
-Création de fiches de révision denses (format skill `prof`) pour développeurs mid/senior, basées sur le cours Udemy "Next.js 15 & React - The Complete Guide" (2025), enrichies par 4 recherches parallèles couvrant l'état de l'écosystème en avril 2026, puis consolidées après audit critique.
+Création de fiches de révision denses (format skill `lesson-doc`) pour développeurs mid/senior, basées sur le cours Udemy "Next.js 15 & React - The Complete Guide" (2025), enrichies par 4 recherches parallèles couvrant l'état de l'écosystème en avril 2026, puis consolidées après audit critique.
 
 **Le cours Udemy compte 23 sections, dont seules les sections 1 à 10 (App Router moderne) sont retenues.** Les sections 11 à 23 (Pages Router legacy) sont ignorées.
 
@@ -512,7 +512,7 @@ Next.js Transverses
 
 ---
 
-## Matrice "concept → leçon canonique"
+## Matrice concept → leçon canonique
 
 Pour éviter la redondance cross-leçon, chaque concept est **canonique dans UNE leçon** et peut être mentionné brièvement ailleurs si pertinent. Liste des concepts partagés :
 
@@ -558,12 +558,12 @@ Pour éviter la redondance cross-leçon, chaque concept est **canonique dans UNE
 
 ---
 
-## Versions cibles pour l'index
+## Versions cibles
 
-| Techno | `last_version` | Notes |
-|--------|----------------|-------|
-| `react` | `"19.2"` | React 19.2.5 stable avril 2026 |
-| `nextjs` | `"16.2"` | Next.js 16.2.x stable avril 2026 |
+| Techno | Section index | Dossier | Leçons | `last_version` | Notes |
+|--------|---------------|---------|--------|----------------|-------|
+| `react` | `nextjs` | `lessons/nextjs/` | `[bases-react, hooks-modernes-react-19]` | `"19.2"` | React 19.2.5 stable avril 2026, leçons rangées avec Next.js |
+| `nextjs` | `nextjs` | `lessons/nextjs/` | toutes les autres | `"16.2"` | Next.js 16.2.x stable avril 2026 |
 
 Le champ `last_version` doit être écrit **par leçon** dans l'index (pas au niveau techno) selon la spec du SKILL.md. Toutes les leçons react auront `last_version: "19.2"`, toutes les leçons nextjs auront `last_version: "16.2"`.
 
@@ -616,7 +616,7 @@ Le champ `last_version` doit être écrit **par leçon** dans l'index (pas au ni
 
 ## Fichiers critiques à consulter avant exécution
 
-- `.claude/skills/prof/SKILL.md` : spec complète du skill `prof` (workflow CREATE, conventions de format, règles de recherche)
+- `.claude/skills/lesson-doc/SKILL.md` : conventions de format, règles de recherche et d'index ; `.claude/skills/prof/SKILL.md` : workflow CREATE
 - `lessons/index.yaml` : index global (à enrichir avec technos `react` et `nextjs`)
 - `lessons/angular/routing-navigation.md` : référence format routing
 - `lessons/angular/deploiement-csr-ssr-ssg.md` : référence fusion multi-concepts en une leçon (modèle pour `rendering-caching`)

@@ -2,7 +2,7 @@
 
 ## Contexte
 
-Création de fiches de révision denses (format skill `prof`) pour développeurs mid/senior, basées sur le cours Udemy "Redis The Complete Developer's Guide" (22 dossiers), enrichies par des recherches sur les nouveautés Redis 7.x / 8.x non couvertes par le cours.
+Création de fiches de révision denses (format skill `lesson-doc`) pour développeurs mid/senior, basées sur le cours Udemy "Redis The Complete Developer's Guide" (22 dossiers), enrichies par des recherches sur les nouveautés Redis 7.x / 8.x non couvertes par le cours.
 
 **Le cours compte 22 dossiers, regroupés en 12 leçons** selon un ordre pédagogique (fondations → data types → messagerie → patterns → production). Le contenu trop niche/obsolète/superflu pour un mid/senior généraliste a été éliminé.
 
@@ -107,9 +107,9 @@ Production
 
 ## Versions cibles
 
-| Techno | `last_version` | Notes |
-|--------|----------------|-------|
-| `redis` | `"8.6"` | Redis Open Source 8.6 stable avril 2026, Stack unifié dans le core |
+| Techno | Section index | Dossier | Leçons | `last_version` | Notes |
+|--------|---------------|---------|--------|----------------|-------|
+| `redis` | `redis` | `lessons/redis/` | toutes | `"8.6"` | Redis Open Source 8.6 stable avril 2026, Stack unifié dans le core |
 
 Le champ `last_version` doit être écrit **par leçon** dans l'index. Toutes les leçons redis auront `last_version: "8.6"`.
 
@@ -333,6 +333,24 @@ Le champ `last_version` doit être écrit **par leçon** dans l'index. Toutes le
 
 ---
 
+## Matrice concept → leçon canonique
+
+| Concept | Canonique dans | Mentionné aussi dans |
+|---------|----------------|----------------------|
+| `SCAN` / `KEYS` | `fondamentaux` | `strings-bitmaps-ttl` (SSCAN/HSCAN par type), `production-redis` (ops) |
+| Key naming `entity:id:field` | `fondamentaux` | `modelisation-relationnelle` (design methodology) |
+| TTL / éviction | `strings-bitmaps-ttl` | `hashes` (HEXPIRE per-field), `production-redis` (maxmemory) |
+| Encodings (`listpack`, `intset`, `skiplist`, `quicklist`) | leçon du data type concerné | `production-redis` (tuning des seuils) |
+| `MULTI`/`EXEC`/`WATCH` | `pipelining-transactions-locks` | `scripting-lua-functions` (atomicité comparée) |
+| Distributed lock / Redlock | `pipelining-transactions-locks` | (nulle part ailleurs) |
+| Redis Functions vs `EVAL` | `scripting-lua-functions` | `pipelining-transactions-locks` (unlock script) |
+| `SORT` legacy | `modelisation-relationnelle` | `redis-query-engine` (quand migrer) |
+| Vector Sets / `VECTOR` index | `redis-query-engine` | (nulle part ailleurs) |
+| Cluster, hash tags, `MOVED`/`ASK` | `production-redis` | `pipelining-transactions-locks` (pipeline sur cluster), `modelisation-relationnelle` (limitations SORT) |
+| Redis Open Source 8 / Stack unifié | `fondamentaux` | `redis-query-engine` (renommage RediSearch) |
+
+---
+
 ## Dépréciations et breaking changes critiques à signaler
 
 | Ancien | Nouveau | Leçon impactée |
@@ -353,8 +371,8 @@ Le champ `last_version` doit être écrit **par leçon** dans l'index. Toutes le
 
 ## Fichiers critiques à consulter avant exécution
 
-- `.claude/skills/prof/SKILL.md` : spec complète du skill `prof` (workflow CREATE, conventions de format, règles de recherche)
-- `.claude/skills/prof/templates/lesson.md` : template de structure d'une leçon
+- `.claude/skills/lesson-doc/SKILL.md` : conventions de format, règles de recherche et d'index ; `.claude/skills/prof/SKILL.md` : workflow CREATE
+- `.claude/skills/lesson-doc/templates/lesson.md` : template de structure d'une leçon
 - `lessons/index.yaml` : index global (à enrichir avec techno `redis`)
 - `lessons/redis/` : dossier destination des 12 fichiers `<id>.md` (à créer)
 

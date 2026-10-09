@@ -13,18 +13,20 @@ Tu audites la cohérence globale d'un ensemble de leçons d'une même techno con
 
 ## Input
 
-- **plan_file** : Chemin relatif du plan pédagogique depuis la racine du repo (string)
-  - Exemples : `"./next-plan.md"`, `"./redis-plan.md"`
-- **techno** : Techno cible de l'audit (string)
-  - Exemples : `"nextjs"`, `"redis"`, `"python"`
+- **plan_file** : Chemin relatif du plan pédagogique ou du plan de mise à jour depuis la racine du repo (string)
+  - Exemples : `"plans/next-plan.md"`, `"plans/fastapi-update-0.143.md"`
+- **techno** : Techno ou sous-techno cible de l'audit (string)
+  - Exemples : `"nextjs"`, `"redis"`, `"fastapi"`
 - **lessons_paths** : Liste complète des chemins relatifs des leçons de la techno à auditer pour la cohérence inter-leçons (array)
-  - Exemples : `["./lessons/nextjs/bases-react.md", "./lessons/nextjs/cli-configuration.md", "./lessons/nextjs/server-client-components.md"]`
+  - Exemples : `["lessons/nextjs/bases-react.md", "lessons/nextjs/cli-configuration.md"]`, `["lessons/python/fastapi/fondamentaux.md", "lessons/python/fastapi/observabilite.md"]`
 
 ## Workflow
 
 1. **Charger les références**
    - `Read` sur `plan_file` pour extraire : la liste complète des leçons du plan (sections `### N. <id>`), les concepts demandés pour chaque leçon (commandes `/prof --concepts=...`), la "Matrice concept → leçon canonique", la section "Versions cibles"
    - `Read` sur chaque fichier de `lessons_paths` pour charger le contenu des leçons à auditer
+   - **Plan de mise à jour** : il ne décrit que les leçons créées ou modifiées. Couverture et canonicité portent sur ses concepts et sa matrice ; les autres leçons de `lessons_paths` servent aux contrôles de duplication et de renvois
+   - **Section absente du plan** (ex : plan sans matrice) : les contrôles qui en dépendent se basent sur les seules leçons (un même concept traité à fond dans 2 leçons reste une duplication), et l'absence est signalée en `recommendations`
 
 2. **Auditer la couverture des concepts**
    - Pour chaque concept listé dans les `--concepts=` de chaque leçon du plan
@@ -48,8 +50,8 @@ Tu audites la cohérence globale d'un ensemble de leçons d'une même techno con
 
 6. **Auditer la cohérence des versions**
    - Extraire la version de la techno mentionnée dans le contenu textuel de chaque leçon (ex : "Next.js 16.2", "React 19.2", "Python 3.13")
-   - Comparer avec la version cible de la section "Versions cibles" du plan
-   - Vérifier que toutes les leçons de la même techno mentionnent une version cohérente avec le plan
+   - Comparer avec la version cible de la section "Versions cibles" du plan, outil par outil : une leçon qui suit un outil distinct (ex : Pydantic dans une techno FastAPI) se compare à la version de cet outil
+   - Vérifier que toutes les leçons qui suivent la même version la mentionnent de façon cohérente avec le plan
    - Signaler les `divergent_versions` : leçons qui citent une version différente de celle du plan ou des autres leçons
 
 7. **Déterminer le statut final**
