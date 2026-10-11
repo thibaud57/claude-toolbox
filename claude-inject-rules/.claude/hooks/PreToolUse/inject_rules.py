@@ -36,6 +36,7 @@ reserve au JSON attendu par Claude Code) et affiche la traceback en cas d'erreur
 Convention fail-open : toute erreur = exit 0 silencieux (ne jamais bloquer le tool).
 """
 
+import functools
 import json
 import sys
 import os
@@ -54,61 +55,47 @@ CACHE_TTL_SECONDS = 24 * 3600  # 24h
 
 DEBUG = os.environ.get("INJECT_RULES_DEBUG", "").strip().lower() not in ("", "0", "false", "no")
 _REGEX_FLAGS = re.IGNORECASE if os.name == "nt" else 0
-_GLOB_CACHE = {}
 
 
 def dbg(message):
-    """Trace de debug sur stderr (stdout est reserve au JSON de sortie)."""
+    # stderr : stdout est reserve au JSON de sortie.
     if DEBUG:
         print("[inject_rules] %s" % message, file=sys.stderr)
 
 
 def norm_path(path):
-    """Normalise en forward slashes, sans slash final."""
     return os.path.normpath(path).replace("\\", "/").rstrip("/")
 
 
 def is_under(child_norm, parent_norm):
-    """child est-il strictement sous parent ? (insensible a la casse, Windows)"""
     return child_norm.lower().startswith(parent_norm.lower() + "/")
 
 
 def relative_to(child_norm, parent_norm):
-    """Chemin de child relatif a parent, ou child inchange s'il n'est pas dessous."""
     if is_under(child_norm, parent_norm):
         return child_norm[len(parent_norm) + 1:]
     return child_norm
 
 
 def parse_frontmatter(content):
-    """Parse YAML frontmatter. Returns (dict, body) or (None, content)."""
-    if not content.startswith("---"):
-        return None, content
-
     match = re.match(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", content, re.DOTALL)
     if not match:
         return None, content
 
-    fm_text = match.group(1)
-    body = match.group(2)
-
     try:
-        fm_dict = yaml.safe_load(fm_text) or {}
+        fm_dict = yaml.safe_load(match.group(1))
     except Exception:
         fm_dict = {}
 
-    return (fm_dict if isinstance(fm_dict, dict) else {}), body
+    return (fm_dict if isinstance(fm_dict, dict) else {}), match.group(2)
 
 
 def get_patterns(frontmatter):
-    """Extract paths/globs patterns from frontmatter (supports both keys)."""
     if not frontmatter:
         return []
     patterns = []
     for key in ("paths", "globs"):
         value = frontmatter.get(key)
-        if value is None:
-            continue
         if isinstance(value, list):
             patterns.extend(str(p) for p in value if p)
         elif isinstance(value, str):
@@ -130,6 +117,7 @@ def expand_braces(pattern):
     return expanded
 
 
+@functools.lru_cache(maxsize=None)
 def compile_glob(pattern):
     """
     Compile un glob en regex.
@@ -138,10 +126,6 @@ def compile_glob(pattern):
     ne traversent jamais un `/`. Contrairement a fnmatch, le prefixe du pattern
     est donc pleinement respecte.
     """
-    cached = _GLOB_CACHE.get(pattern)
-    if cached is not None:
-        return cached
-
     index, length = 0, len(pattern)
     parts = ["^"]
     while index < length:
@@ -163,10 +147,7 @@ def compile_glob(pattern):
             parts.append(re.escape(char))
             index += 1
     parts.append("$")
-
-    compiled = re.compile("".join(parts), _REGEX_FLAGS)
-    _GLOB_CACHE[pattern] = compiled
-    return compiled
+    return re.compile("".join(parts), _REGEX_FLAGS)
 
 
 def glob_match(rel_path, pattern):
@@ -177,16 +158,11 @@ def glob_match(rel_path, pattern):
     quelle profondeur (`*.model.ts` attrape src/a/b/user.model.ts), un pattern
     contenant un `/` est ancre a la racine de sa propre racine de rules.
     """
-    rel_path = rel_path.replace("\\", "/")
     pattern = pattern.replace("\\", "/")
     basename = rel_path.rsplit("/", 1)[-1]
 
     for variant in expand_braces(pattern):
-        try:
-            regex = compile_glob(variant)
-        except Exception:
-            continue
-
+        regex = compile_glob(variant)
         if regex.match(rel_path):
             return True
 
@@ -217,76 +193,53 @@ def find_rules_roots(project_norm, file_norm):
     else:
         segments = []
 
-    candidates = [project_norm]
-    current = project_norm
-    for segment in segments:
-        current = "%s/%s" % (current, segment)
-        candidates.append(current)
-
     roots = []
-    for candidate in candidates:
+    for depth in range(len(segments) + 1):
+        candidate = "/".join([project_norm, *segments[:depth]])
         rules_dir = os.path.join(candidate, ".claude", "rules")
         if os.path.isdir(rules_dir):
-            label = "." if candidate == project_norm else relative_to(candidate, project_norm)
+            label = "/".join(segments[:depth]) or "."
             roots.append((candidate, rules_dir, label))
             dbg("racine retenue : %s" % label)
 
     return roots
 
 
-def sanitize_session_id(session_id):
-    """Sanitize session_id for use as filename (paranoid, should never fire)."""
-    if not session_id:
-        return ""
-    return re.sub(r"[^A-Za-z0-9_\-]", "_", session_id)[:128]
+def session_cache_file(session_id):
+    # session_id sert de nom de fichier : assaini par precaution.
+    safe_id = re.sub(r"[^A-Za-z0-9_\-]", "_", session_id or "")[:128]
+    return CACHE_DIR / ("%s.json" % safe_id) if safe_id else None
 
 
 def load_session_cache(session_id):
-    """Load the set of rules already injected in this session."""
-    session_id = sanitize_session_id(session_id)
-    if not session_id:
+    cache_file = session_cache_file(session_id)
+    if not cache_file:
         return set()
     try:
-        cache_file = CACHE_DIR / ("%s.json" % session_id)
-        if not cache_file.exists():
-            return set()
-        data = json.loads(cache_file.read_text(encoding="utf-8"))
-        return set(data.get("injected_rules", []))
+        return set(json.loads(cache_file.read_text(encoding="utf-8")).get("injected_rules", []))
     except Exception:
         return set()
 
 
 def save_session_cache(session_id, injected_rules):
-    """Save the updated set of injected rules for this session."""
-    session_id = sanitize_session_id(session_id)
-    if not session_id:
+    cache_file = session_cache_file(session_id)
+    if not cache_file:
         return
     try:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        cache_file = CACHE_DIR / ("%s.json" % session_id)
-        data = {
-            "injected_rules": sorted(injected_rules),
-            "updated_at": time.time(),
-        }
-        cache_file.write_text(json.dumps(data), encoding="utf-8")
+        cache_file.write_text(json.dumps({"injected_rules": sorted(injected_rules)}), encoding="utf-8")
     except Exception:
         pass
 
 
 def cleanup_old_sessions():
-    """Remove session cache files older than CACHE_TTL_SECONDS."""
-    try:
-        if not CACHE_DIR.exists():
-            return
-        now = time.time()
-        for f in CACHE_DIR.glob("*.json"):
-            try:
-                if now - f.stat().st_mtime > CACHE_TTL_SECONDS:
-                    f.unlink()
-            except Exception:
-                continue
-    except Exception:
-        pass
+    now = time.time()
+    for f in CACHE_DIR.glob("*.json"):
+        try:
+            if now - f.stat().st_mtime > CACHE_TTL_SECONDS:
+                f.unlink()
+        except OSError:
+            pass
 
 
 def collect_matches(roots, file_norm, already_injected):
@@ -297,6 +250,12 @@ def collect_matches(roots, file_norm, already_injected):
         dbg("racine %s : chemin relatif = %s" % (label, rel_path))
 
         for rule_file in sorted(Path(rules_dir).rglob("*.md")):
+            rel_rule = rule_file.relative_to(rules_dir).as_posix()
+            cache_key = "%s::%s" % (label, rel_rule)
+            if cache_key in already_injected:
+                dbg("  deja injectee : %s" % cache_key)
+                continue
+
             try:
                 content = rule_file.read_text(encoding="utf-8")
             except Exception:
@@ -307,16 +266,6 @@ def collect_matches(roots, file_norm, already_injected):
             patterns = get_patterns(frontmatter)
             if not patterns:
                 dbg("  sans paths, ignoree : %s" % rule_file.name)
-                continue
-
-            try:
-                rel_rule = rule_file.relative_to(rules_dir).as_posix()
-            except Exception:
-                rel_rule = rule_file.name
-
-            cache_key = "%s::%s" % (label, rel_rule)
-            if cache_key in already_injected:
-                dbg("  deja injectee : %s" % cache_key)
                 continue
 
             hit = next((p for p in patterns if glob_match(rel_path, p)), None)
@@ -332,29 +281,24 @@ def collect_matches(roots, file_norm, already_injected):
 
 def main():
     try:
-        stdin_input = sys.stdin.read().strip()
-        if not stdin_input:
-            dbg("stdin vide")
-            sys.exit(0)
-
-        hook_data = json.loads(stdin_input)
+        hook_data = json.load(sys.stdin)
         tool_name = hook_data.get("tool_name", "")
         dbg("tool = %s" % tool_name)
 
         if tool_name not in TOOLS_TO_INTERCEPT:
             dbg("tool non intercepte")
-            sys.exit(0)
+            return
 
         tool_input = hook_data.get("tool_input", {})
         file_path = tool_input.get("file_path", "")
         if not file_path:
             dbg("file_path absent")
-            sys.exit(0)
+            return
 
         project_dir = hook_data.get("cwd", "")
         if not project_dir:
             dbg("cwd absent")
-            sys.exit(0)
+            return
 
         session_id = hook_data.get("session_id", "")
 
@@ -366,17 +310,15 @@ def main():
         roots = find_rules_roots(project_norm, file_norm)
         if not roots:
             dbg("aucune racine .claude/rules trouvee")
-            sys.exit(0)
+            return
 
         already_injected = load_session_cache(session_id)
         matched = collect_matches(roots, file_norm, already_injected)
-
-        # Cleanup opportuniste des anciennes sessions (quel que soit le resultat)
         cleanup_old_sessions()
 
         if not matched:
             dbg("aucune rule a injecter")
-            sys.exit(0)
+            return
 
         display_path = relative_to(file_norm, project_norm)
         lines = [
@@ -397,25 +339,16 @@ def main():
                 "additionalContext": "\n".join(lines),
             }
         }
-
-        # ensure_ascii=True obligatoire : stdout est en cp1252 sous Windows et
-        # toute rule contenant un emoji (les blocs d'exemples ✅/❌) ferait lever
-        # un UnicodeEncodeError, avale par le fail-open, donc aucune injection.
-        print(json.dumps(output, ensure_ascii=True))
+        print(json.dumps(output))
         dbg("%d rule(s) injectee(s)" % len(matched))
 
-        for _display, cache_key, _body in matched:
-            already_injected.add(cache_key)
+        already_injected.update(cache_key for _display, cache_key, _body in matched)
         save_session_cache(session_id, already_injected)
 
-    except SystemExit:
-        raise
     except Exception:
         if DEBUG:
             import traceback
             traceback.print_exc(file=sys.stderr)
-
-    sys.exit(0)
 
 
 if __name__ == "__main__":
