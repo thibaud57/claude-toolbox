@@ -1,7 +1,7 @@
 ---
 description: Met à jour les leçons d'une techno vers sa version stable actuelle. Recherche les changements sur sources officielles, cadre leur placement dans un plan de mise à jour (modifier, créer, fusionner, supprimer, bump seul), puis orchestre writer + auditor individuel + coherence-auditor et consolide lessons/index.yaml.
 argument-hint: [--techno=<slug|toutes> --lessons=<id1,id2> --concepts=<liste> --skip-audit]
-allowed-tools: Read, Write, Edit, WebSearch, WebFetch, Bash(git status *), Bash(git restore *), Bash(git rm *), Bash(rm lessons/*)
+allowed-tools: Read, Write, Edit, WebSearch, WebFetch, Bash(git status *), Bash(git diff *), Bash(git restore *), Bash(git rm *), Bash(rm lessons/*)
 ---
 
 # Update Lesson - Orchestrateur de mise à jour de leçons
@@ -112,6 +112,7 @@ Ta mission est de mettre à jour les leçons d'une techno entre leur `last_versi
 4.2. **Bilan d'audit individuel + dialogue user**, par leçon en `warn`, `fail` ou `error`
    - `continuer tel quel`
    - `corriger` → relancer `lesson/writer` avec `audit_feedback` = `blocking_issues` + `recommendations` retenues, puis relancer `lesson/auditor`. Pas de boucle auto : rouvrir ce dialogue tant que le user le demande
+   - SI la correction coupe du contenu → `git diff -- <file>` avant de relancer l'auditor : remettre tout piège, `> ⚠️`, cœur de chapitre ou élément encore utilisé retiré (cf. skill lesson-doc § Conventions de format > Chapitres)
    - `annuler` → restaurer la leçon (cf. § Règles > Annulation) et l'exclure de la consolidation
    - Attendre validation AVANT 4.3
 

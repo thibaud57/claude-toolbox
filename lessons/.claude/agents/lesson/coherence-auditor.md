@@ -58,6 +58,7 @@ Tu audites la cohérence globale d'un ensemble de leçons d'une même techno con
 7. **Auditer la valeur du contenu**
    - Appliquer la règle Valeur avant exhaustivité (cf. skill lesson-doc § Conventions de format > Chapitres) à l'ensemble des leçons
    - Signaler les `low_value` : contenus à couper ou condenser, par leçon, avec leurs lignes et une estimation du volume ; toujours en `recommendations`, jamais bloquant
+   - Une plage signalée exclut les pièges, les `> ⚠️`, le cœur du chapitre et ce que la leçon utilise encore ailleurs : les nommer comme à garder, ou proposer de condenser plutôt que de couper
 
 8. **Déterminer le statut final**
    - `pass` : tous les checks passent entièrement
