@@ -56,6 +56,19 @@ Aucun breaking change ni suppression de commande entre 8.6 et 8.10. Seule suppre
 | 37 | Lettuce utilise RESP3 par défaut depuis la 6 (pas la 7) ; go-redis v9 RESP3 par défaut | client | https://redis.io/docs/latest/operate/rs/references/compatibility/resp/ | "Lettuce versions 6 and later use RESP3 by default" | confirmé |
 | 38 | Subkey notifications des hashes : le flag de classe `h` est requis en plus de S/T/I/V (l'exemple `ST` seul de la doc ne produit rien) | 8.8 | https://raw.githubusercontent.com/redis/redis/8.10/src/notify.c ; https://raw.githubusercontent.com/redis/redis/8.10/tests/unit/pubsub.tcl | `if (!(server.notify_keyspace_events & type)) return;` avant le bloc subkey ; tests en `Sh`, `Th`, `STIVh` | confirmé (code source, contredit l'exemple de la doc) |
 
+## Écartés
+
+Changements confirmés mais sans valeur pour une leçon (cf. skill lesson-doc § Conventions de format > Chapitres, Valeur avant exhaustivité). Aucun n'est assigné à une leçon.
+
+| # | Changement | Raison |
+|---|------------|--------|
+| 9 | `FT.PROFILE` supporte `FT.HYBRID` | Niche : même commande de profiling, argument de plus, paraphrase de la doc |
+| 11 | `slowlog-entry-max-argc` / `slowlog-entry-max-string-len` | Défaut sans enjeu : deux paramètres de troncature d'entrée, rarement ajustés |
+| 20 | `COLLECT` : exécution séparée remote / local en cluster | Détail interne, même reducer que #10 |
+| 21 | `FT.ALIASLIST` | Liste exhaustive de commandes : aucune leçon ne traite les alias d'index |
+| 22 | `SLOWLOG GET` : nombre total d'arguments dans la réponse | Détail de format de réponse sans effet sur la façon d'écrire ou de déboguer |
+| 24 | `redis-cli --latency-percentiles` ; reshard/rebalance via atomic slot migration | Liste de flags CLI : aucune leçon ne traite `redis-cli --latency` / `--cluster` |
+
 ## Décisions de structure
 
 | Leçon | Action | Changements | Justification |
@@ -71,11 +84,10 @@ Aucun breaking change ni suppression de commande entre 8.6 et 8.10. Seule suppre
 | `modelisation-relationnelle` | modifier | #1 | Table de sélection du data type |
 | `pipelining-transactions-locks` | bump seul | : | Aucun changement 8.8 / 8.10 ne la concerne |
 | `scripting-lua-functions` | modifier | #2 | Le rate limiter Lua est couvert nativement par `INCREX` : renvoi `> ℹ️` |
-| `redis-query-engine` | modifier | #8, #9, #10, #18, #19 | Canonique pour `FT.HYBRID`, `FT.AGGREGATE`, `FT.PROFILE` |
-| `production-redis` | modifier | #11, #12 (renvoi), #16, #22, #23 | Canonique pour persistence, observabilité, TLS, tuning des encodings |
+| `redis-query-engine` | modifier | #8, #10, #18, #19 | Canonique pour `FT.HYBRID`, `FT.AGGREGATE` |
+| `production-redis` | modifier | #12 (renvoi), #16, #23 | Canonique pour persistence, TLS, tuning des encodings |
 
 - **bump seul** : aucun contenu modifié, seule `last_version` change dans l'index
-- #21 (`FT.ALIASLIST`) et #24 (`redis-cli`) : aucune leçon ne traite les alias d'index ni `redis-cli --latency` / `--cluster`, non intégrés
 - Insertion de `arrays` en L5 : les renvois « Lx » des autres leçons sont renumérotés (L5 → L6 ... L12 → L13)
 
 ---
@@ -241,8 +253,8 @@ Aucun breaking change ni suppression de commande entre 8.6 et 8.10. Seule suppre
 **Action** : modifier
 
 **Changements à appliquer :**
-- [#8, #9, #19] Section FT.HYBRID : `SHARD_K_RATIO`, `EXPLAINSCORE`, profiling
-- [#10] Chapitre FT.AGGREGATE : un seul reducer `COLLECT` (8.8+) qui déroule et trie les documents dans chaque groupe ; #20 est un détail interne, non rédigé
+- [#8, #19] Section FT.HYBRID : `SHARD_K_RATIO`, `EXPLAINSCORE`
+- [#10] Chapitre FT.AGGREGATE : un seul reducer `COLLECT` (8.8+) qui déroule et trie les documents dans chaque groupe
 - [#18] Chapitre diagnostic : politique `search-on-timeout`
 
 ---
@@ -253,7 +265,6 @@ Aucun breaking change ni suppression de commande entre 8.6 et 8.10. Seule suppre
 
 **Changements à appliquer :**
 - [#16] Chapitre persistence : famille `BACKUP` et `preload-file`
-- [#11, #22] Chapitre observabilité : configs `slowlog-entry-*`, total d'arguments dans `SLOWLOG GET`
 - [#23] Chapitre TLS : mention courte, sans directive (#29)
 - [#12] Tuning des encodings : renvoi compact hashes (L3)
 - Checklist : ligne backup

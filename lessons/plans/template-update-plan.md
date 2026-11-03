@@ -14,6 +14,14 @@ Un changement par ligne, chacun tracé à une source officielle consultée (cf. 
 |---|------------|---------|--------|---------|--------|
 | 1 | [Description factuelle courte] | [0.137] | [URL] | "[extrait verbatim court]" | confirmé / non confirmé |
 
+## Écartés
+
+Changements confirmés mais sans valeur pour une leçon (cf. skill lesson-doc § Conventions de format > Chapitres, Valeur avant exhaustivité). Aucun n'est assigné à une leçon.
+
+| # | Changement | Raison |
+|---|------------|--------|
+| [3] | [Description courte] | [niche, défaut sans enjeu, historique, paraphrase de la doc] |
+
 ## Décisions de structure
 
 | Leçon | Action | Changements | Justification |

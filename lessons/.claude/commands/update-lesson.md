@@ -66,6 +66,7 @@ Ta mission est de mettre à jour les leçons d'une techno entre leur `last_versi
 ### Phase 2 : Cadrage
 
 2.1. **Décider le placement de chaque changement confirmé**
+   - Trier d'abord : `retenu` ou `écarté` selon la règle Valeur avant exhaustivité (cf. skill lesson-doc § Conventions de format > Chapitres) ; un `écarté` n'est assigné à aucune leçon et va dans la section "Écartés" du plan
    - Leçon et chapitre canoniques (un concept = une leçon canonique, renvoi bref ailleurs)
    - Action par leçon : `modifier`, `créer`, `fusionner dans <slug>`, `supprimer` ou `bump seul`
    - Une nouvelle leçon se justifie quand les changements forment un bloc mental cohérent qu'aucune leçon existante ne porte ; sinon un chapitre ou des bullets dans la leçon canonique suffisent
@@ -74,7 +75,7 @@ Ta mission est de mettre à jour les leçons d'une techno entre leur `last_versi
    - Remplir toutes ses sections, dont "Versions cibles" (section d'index et dossier) et "Ordre d'exécution recommandé" (position des leçons créées)
 
 2.3. **Présenter le plan au user** et attendre validation AVANT la Phase 3
-   - Afficher : tableau des décisions de structure, changements par leçon avec leur source, changements `non confirmé` (et pourquoi), chemin de UPDATE_PLAN_FILE
+   - Afficher : tableau des décisions de structure, changements par leçon avec leur source, changements `non confirmé` (et pourquoi), changements `écarté` (et pourquoi), chemin de UPDATE_PLAN_FILE
    - Le user peut amender le plan directement : relire UPDATE_PLAN_FILE après sa validation
 
 2.4. **Router selon les actions validées**

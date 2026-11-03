@@ -63,8 +63,9 @@ Si une section marquée `(optionnel)` n'est pas nécessaire → omettre la secti
 - **Label conceptuel** : terme qui décrit un comportement, un pattern ou une catégorie sans être un artefact de code (getter, Upcasting, First-level cache...) — pas de backticks.
 - Bold (`**`) pour emphase contextuelle ou comme label structurant en début de bullet — jamais comme substitut de titre (`##`/`###`)
 - Pattern label obligatoire : quand un bullet commence par un mot-clé suivi de ` : `, le mot-clé est en bold. Terme technique → `- **`terme`** : description`. Label conceptuel → `- **Label** : description`
-- Ajouter les notions manquantes mais indispensables à la compréhension
+- Ajouter une notion manquante seulement si un dev mid / senior resterait bloqué sans elle
 - Pas d'explications que tout développeur connaît (ex : "un service centralise la logique", "une boucle répète des instructions", ...), sauf si c'est le thème de la leçon — les pièges, comportements non-évidents et le "pourquoi" des règles restent toujours attendus
+- **Valeur avant exhaustivité** : une leçon garde ce qui change la façon d'écrire ou de déboguer le code (pièges, choix de conception, comportements non évidents, ruptures récentes) et laisse à la doc officielle les cas de niche (provider marginal, paramètre rarement utile), les valeurs par défaut sans enjeu, les listes exhaustives (paramètres, providers, flags, commandes CLI), l'historique de versions et la paraphrase de la doc. Test : un dev mid / senior perdrait-il quelque chose si la ligne disparaissait ?
 - Intégrer les pièges et bonnes pratiques dans les chapitres concernés en priorité. Un chapitre BP transversal en fin de leçon est acceptable s'il combine des concepts de plusieurs chapitres
 - Un chapitre de règles générales transversales (setup, fondamentaux, conventions) peut être placé **en début de leçon** si plusieurs chapitres en dépendent et que les règles ne trouvent pas leur place ailleurs
 - Liberté totale de réorganiser les éléments selon l'ordre pédagogique le plus pertinent
@@ -82,7 +83,7 @@ Si une section marquée `(optionnel)` n'est pas nécessaire → omettre la secti
 - Pas de titre "Exemples de Code" — juste le bloc directement
 - Langage déduit du contexte, obligatoirement un identifiant valide Notion : `abap`, `arduino`, `bash`, `basic`, `c`, `clojure`, `coffeescript`, `c++`, `c#`, `css`, `dart`, `diff`, `docker`, `elixir`, `elm`, `erlang`, `flow`, `fortran`, `f#`, `gherkin`, `glsl`, `go`, `graphql`, `groovy`, `haskell`, `html`, `java`, `javascript`, `json`, `julia`, `kotlin`, `latex`, `less`, `lisp`, `livescript`, `lua`, `makefile`, `markdown`, `markup`, `matlab`, `mermaid`, `nix`, `objective-c`, `ocaml`, `pascal`, `perl`, `php`, `plain text`, `powershell`, `prolog`, `protobuf`, `python`, `r`, `reason`, `ruby`, `rust`, `sass`, `scala`, `scheme`, `scss`, `shell`, `sql`, `swift`, `typescript`, `vb.net`, `verilog`, `vhdl`, `visual basic`, `webassembly`, `xml`, `yaml`
 - Utiliser uniquement un langage de cette liste. En cas de doute, utiliser `plain text`
-- Indiquer la version dans les exemples quand c'est pertinent (ex : Python 3.13, Angular 19)
+- Indiquer la version de la techno ciblée dans les exemples quand c'est pertinent (ex : Python 3.13, Angular 19), jamais l'historique de ses versions
 
 ### Hiérarchie des titres
 
@@ -100,6 +101,8 @@ Si une section marquée `(optionnel)` n'est pas nécessaire → omettre la secti
 ### Avertissements et notes
 
 - Dépréciation : `> ⚠️ Dépréciée depuis X.Y : <ancien> → utiliser <nouveau>`
+- Changement de comportement qui casse du code : `> ⚠️ Depuis X.Y : <ancien> → <nouveau>` (`X.Y.Z` pour un patch)
+- Feature stable : aucun marqueur de version, le contenu décrit l'état actuel
 - API supprimée : ne pas la documenter, la retirer si présente dans une version précédente de la leçon
 - Avertissement critique ou piège : `> ⚠️ <note courte>`
 - Info contextuelle ou conseil : `> ℹ️ <contexte>`
@@ -117,7 +120,7 @@ Si une section marquée `(optionnel)` n'est pas nécessaire → omettre la secti
 
 - Toujours AVANT de rédiger ; autant de sources que nécessaire ; date courante du système, jamais d'année en dur
 - **Traçabilité des sources** : tout fait technique retenu (API, comportement, version, dépréciation) vient d'une source officielle effectivement consultée : doc, changelog, release notes, guide de migration, code source, PR. Une déduction ou un résumé tiers n'est pas une source. Ce qui n'a pas pu être confirmé est signalé à l'utilisateur, jamais rédigé comme un fait. La preuve (URL + extrait) est présentée au point de validation, jamais dans la leçon, dont le style reste inchangé
-- **Granularité des versions** : toute version écrite dans l'index ou comparée est au format `major.minor` (ex : `"3.14"`) ; un patch ne rend pas une leçon outdated. Majeur seul si la techno ne publie que des majeures (ex : Java `"26"`). Dans le contenu d'une leçon, un fix ou une feature liés à un patch gardent leur numéro complet (ex : « depuis 0.140.13 »)
+- **Granularité des versions** : toute version écrite dans l'index ou comparée est au format `major.minor` (ex : `"3.14"`) ; un patch ne rend pas une leçon outdated. Majeur seul si la techno ne publie que des majeures (ex : Java `"26"`). Dans le contenu d'une leçon, une rupture ou un fix liés à un patch gardent leur numéro complet (ex : « depuis 0.140.13 », cf. § Conventions de format > Avertissements et notes)
 - **Ce que suit une leçon** : la techno, ou un outil distinct à cycle propre quand il est au cœur du contenu (ex : Hibernate, Maven, Pydantic dans une techno FastAPI, React dans une techno Next.js) ; objet si plusieurs composants : `{framework: "7.0", boot: "4.0"}` ; `null` si indéterminable. Le déduire du sujet et de la `last_version` existante, demander en cas de doute
 - **CREATE** : objectif version stable actuelle, syntaxe recommandée, dépréciations récentes ; sources prioritaires doc officielle et changelog ; `last_version` = version stable de ce que la leçon suit
 - **UPDATE** : objectif syntaxe recommandée aujourd'hui, breaking changes depuis `last_version`, dépréciations et suppressions ; sources prioritaires doc officielle, guide de migration, changelog. Outdated si `last_version` < version actuelle de ce que la leçon suit ; `null` → toujours outdated, recherche sans borne inférieure ; objet → outdated si un composant l'est. `last_version` à écrire = version actuelle identifiée, sinon conserver l'existante

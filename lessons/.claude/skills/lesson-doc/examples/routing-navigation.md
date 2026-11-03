@@ -2,7 +2,7 @@
 
 - Configuration moderne avec `provideRouter()` dans `app.config.ts` (standalone) remplace `RouterModule.forRoot()` (NgModule)
 - Le `<router-outlet>` agit comme placeholder dynamique qui affiche le composant correspondant à la route active
-- `RouterFeatures` permettent d'activer des fonctionnalités optionnelles : `withComponentInputBinding()`, `withNavigationErrorHandler()`, `withViewTransitions()`, `withDebugTracing()`, etc.
+- Les `RouterFeatures` activent des fonctionnalités optionnelles (ex : `withComponentInputBinding()`, `withViewTransitions()`)
 
 ```typescript
 // app.config.ts
@@ -26,12 +26,11 @@ export const routes: Routes = [
 
 - `routerLink` préserve le contexte SPA et déclenche la navigation via le `Router`, contrairement à `href` qui force un rechargement complet
 - `routerLinkActive` applique automatiquement une classe CSS quand la route est active, avec option `routerLinkActiveOptions` pour contrôler la correspondance exacte
-- `ariaCurrentWhenActive` sur `routerLinkActive` applique automatiquement `aria-current` sur le lien actif (Angular 21)
-- `RouterLink` expose `isActive` comme `Signal<boolean>` réactif aux changements de navigation (Angular 21.1) ; remplace `Router.isActive()` déprécié
+- `RouterLink` expose `isActive` comme `Signal<boolean>` réactif aux changements de navigation ; remplace `Router.isActive()` déprécié
 
 ```html
 <nav>
-  <a routerLink="/home" routerLinkActive="active" ariaCurrentWhenActive="page"
+  <a routerLink="/home" routerLinkActive="active"
      [routerLinkActiveOptions]="{exact: true}">Home</a>
   <a [routerLink]="['/products', productId]" routerLinkActive="active">Product</a>
 </nav>
@@ -39,7 +38,7 @@ export const routes: Routes = [
 
 ## Navigation Programmatique
 
-- `Router.navigate()` accepte un tableau de segments de route et des options : `relativeTo`, `queryParams`, `fragment`, `queryParamsHandling`, `onSameUrlNavigation`
+- `Router.navigate()` accepte un tableau de segments de route et des options (ex : `relativeTo`, `queryParams`)
 - `Router.navigateByUrl()` navigue vers une URL complète ; préférer `navigate()` pour les routes relatives
 - Rechargement du composant courant : naviguer vers `/` avec `skipLocationChange: true` puis revenir à l'URL courante
 
@@ -63,36 +62,14 @@ export class NavComponent {
 
 ## Événements de Navigation
 
-- `Router.events` est un `Observable` émettant les événements du cycle de navigation : `NavigationStart` → `GuardsCheckStart` → `GuardsCheckEnd` → `ResolveStart` → `ResolveEnd` → `NavigationEnd`
-- Toute navigation se termine par un des quatre events terminaux : `NavigationEnd`, `NavigationCancel`, `NavigationError`, `NavigationSkipped`
-- `NavigationSkipped` est émis quand `onSameUrlNavigation: 'ignore'` (défaut) et l'URL cible est identique à l'URL courante
-- **`router.currentNavigation()`** : signal `Signal<Navigation | null>` disponible depuis Angular 20.2, réactif dans les templates ; remplace `getCurrentNavigation()` déprécié
+- `Router.events` est un `Observable` émettant les événements du cycle de navigation : `NavigationStart` → guards → resolvers → `NavigationEnd`
+- Toute navigation se termine par un event terminal, dont `NavigationSkipped` émis quand `onSameUrlNavigation: 'ignore'` (défaut) et l'URL cible est identique à l'URL courante
+- **`router.currentNavigation()`** : `Signal<Navigation | null>` réactif dans les templates ; remplace `getCurrentNavigation()` déprécié (alternative RxJS : filtrer `Router.events` sur `NavigationStart` et les events terminaux)
 
 ```typescript
-// Approche signal (Angular 20.2+)
 export class AppComponent {
   router = inject(Router);
   isNavigating = computed(() => !!this.router.currentNavigation());
-}
-```
-
-```typescript
-// Approche classique RxJS
-export class AppComponent {
-  router = inject(Router);
-  loading = false;
-
-  constructor() {
-    this.router.events.pipe(
-      filter(e =>
-        e instanceof NavigationStart ||
-        e instanceof NavigationEnd ||
-        e instanceof NavigationCancel ||
-        e instanceof NavigationError
-      ),
-      takeUntilDestroyed()
-    ).subscribe(e => this.loading = e instanceof NavigationStart);
-  }
 }
 ```
 
@@ -100,10 +77,8 @@ export class AppComponent {
 
 ## Définition et Extraction des Paramètres
 
-- Les paramètres de route se définissent avec `:paramName` dans le `path`
-- **Méthode moderne (Angular 16+)** : `input()` signal avec `withComponentInputBinding()` pour injection automatique des paramètres
+- **Méthode moderne** : `input()` signal avec `withComponentInputBinding()` pour injection automatique des paramètres
 - **Méthode classique** : `ActivatedRoute.params` observable ou `ActivatedRoute.snapshot.paramMap`
-- Les `input()` supportent les transformations et validations de type, y compris `input.required<Type>()`
 
 ```typescript
 // Composant avec input() signal
@@ -120,7 +95,6 @@ export class ProductDetailComponent {
 
 - `ActivatedRoute` est un observable permettant de réagir aux changements de paramètres sans recréer le composant
 - `ActivatedRouteSnapshot` est une capture statique de l'état de la route à un instant T, utile dans les guards et resolvers
-- Utiliser `ActivatedRoute.params` observable quand le même composant peut être réutilisé avec des paramètres différents
 
 ```typescript
 export class ProductComponent {
@@ -141,11 +115,9 @@ export class ProductComponent {
 
 # 4. Routes Imbriquées
 
-- Les routes enfants se définissent via la propriété `children` dans la configuration de la route parent
-- Chaque niveau de routes imbriquées nécessite son propre `<router-outlet>` dans le template du parent
 - `relativeTo: ActivatedRoute` dans la navigation permet de construire des chemins relatifs au contexte actuel
 - L'accès aux données du parent depuis l'enfant nécessite `withRouterConfig({paramsInheritanceStrategy: 'always'})`
-- `routerOutletData` input sur `<router-outlet>` permet de passer des données du parent au composant de la route via le token `ROUTER_OUTLET_DATA` (Angular 19)
+- `routerOutletData` input sur `<router-outlet>` permet de passer des données du parent au composant de la route via le token `ROUTER_OUTLET_DATA`
 
 ```typescript
 export const routes: Routes = [
@@ -183,34 +155,19 @@ export class ProductDetailComponent {
 
 ## Query Parameters
 
-- Les query params (`?key=value`) se définissent via `queryParams` dans `routerLink` ou `Router.navigate()`
-- Extraction moderne via `input()` avec `withComponentInputBinding()` activé
-- Extraction classique via `ActivatedRoute.queryParams` observable ou `queryParamMap`
-- `queryParamsHandling: 'preserve' | 'merge'` contrôle la propagation des query params lors de la navigation
+- Extraction identique aux paramètres de route : `input()` avec `withComponentInputBinding()`, ou `ActivatedRoute.queryParamMap`
+- `queryParamsHandling` (ex : `'merge'`) contrôle la propagation des query params lors de la navigation
 
-> ⚠️ Angular 19 : passer un `UrlTree` à `routerLink` combiné avec `queryParams` ou `fragment` lève une erreur ; les options doivent être embarquées dans le `UrlTree`
+> ⚠️ Depuis 19 : `UrlTree` combiné avec `queryParams` ou `fragment` sur `routerLink` lève une erreur → embarquer les options dans le `UrlTree`
 
 ```html
 <a [routerLink]="['/products']"
    [queryParams]="{category: 'books', sort: 'price'}">Products</a>
 ```
 
-```typescript
-export class ProductsComponent {
-  category = input<string>();
-  sort = input<string>();
-
-  filteredProducts = computed(() =>
-    this.applyFilters(this.category(), this.sort())
-  );
-}
-```
-
 ## Data Statique
 
-- La propriété `data` sur une route permet d'attacher des métadonnées statiques accessibles dans le composant
-- Utile pour configurer le comportement du composant sans dupliquer la logique (ex: mode édition vs création)
-- Accessible via `ActivatedRoute.data` ou directement comme `input()` avec `withComponentInputBinding()`
+- La propriété `data` d'une route est accessible via `ActivatedRoute.data` ou directement comme `input()` avec `withComponentInputBinding()`
 
 ```typescript
 export const routes: Routes = [
@@ -222,21 +179,12 @@ export const routes: Routes = [
 ];
 ```
 
-```typescript
-export class AdminComponent {
-  role = input<string>();
-}
-```
-
 ## Titres de Page
 
-- Configuration du titre via la propriété `title` dans la route (string ou `ResolveFn<string>`)
-- Titres dynamiques avec `ResolveFn<string>` pour inclure des données de route
-- Stratégie personnalisée via `TitleStrategy` pour formatter les titres globalement
+- `title` accepte un string ou un `ResolveFn<string>` pour inclure des données de route ; `TitleStrategy` formate les titres globalement
 
 ```typescript
 export const routes: Routes = [
-  { path: 'home', component: HomeComponent, title: 'Home' },
   {
     path: 'products/:id',
     component: ProductDetailComponent,
@@ -252,9 +200,9 @@ export const routes: Routes = [
 
 - Les `ResolveFn` chargent des données avant l'activation de la route, garantissant que le composant reçoit les données complètes
 - Remplacent les class-based resolvers (dépréciés Angular 15+) par des fonctions utilisant `inject()`
-- Retournent `Observable<T>`, `Promise<T>` ou `T` directement, le router attend automatiquement la résolution
 - Les resolvers s'exécutent en parallèle si plusieurs sont définis sur la même route ; un seul resolver lent bloque l'activation de toute la route
 - En cas d'erreur, retourner `RedirectCommand` pour rediriger ou laisser l'erreur se propager vers `NavigationError`
+- Les données résolues sont accessibles via `ActivatedRoute.data` ou comme `input()` du même nom que la clé de `resolve`
 
 ```typescript
 export const productResolver: ResolveFn<Product> = (route) => {
@@ -271,22 +219,6 @@ export const routes: Routes = [
   }
 ];
 ```
-
-## Accès aux Données Résolues
-
-- Données disponibles via `ActivatedRoute.data` ou comme `input()` avec `withComponentInputBinding()`
-- Le nom de la clé dans `resolve: { product: ... }` devient le nom de la propriété accessible
-
-```typescript
-export class ProductDetailComponent {
-  product = input.required<Product>(); // Injection automatique
-}
-```
-
-## Contrôle et Gestion d'Erreurs
-
-- `runGuardsAndResolvers: 'always' | 'paramsChange' | 'paramsOrQueryParamsChange'` contrôle quand les resolvers s'exécutent
-- Gestion d'erreurs via `catchError()` avec `RedirectCommand` ou écoute des événements `NavigationError`
 
 ```typescript
 export const safeProductResolver: ResolveFn<Product | RedirectCommand> = (route) => {
@@ -305,7 +237,6 @@ export const safeProductResolver: ResolveFn<Product | RedirectCommand> = (route)
 ## Guards Fonctionnels
 
 - Les guards fonctionnels (`CanActivateFn`, `CanDeactivateFn`, `CanMatchFn`) remplacent les class-based guards (dépréciés depuis Angular 15.2)
-- `CanActivateFn` contrôle l'accès à une route, `CanActivateChildFn` protège toutes les routes enfants
 - `CanDeactivateFn` empêche de quitter une route (ex: formulaire non sauvegardé)
 - **`CanMatchFn`** : détermine si une route peut être matchée pendant la résolution du path (utile pour feature flags) ; contrairement à `CanActivateFn`, empêche le lazy-loading du bundle si la route ne matche pas
 
@@ -361,19 +292,15 @@ export class FormComponent implements CanComponentDeactivate {
 
 ## Valeurs de Retour des Guards
 
-- **`true`** : autorise la navigation
-- **`false`** : bloque la navigation
-- **`UrlTree`** : redirige vers une autre route
-- **`RedirectCommand`** (Angular 18+) : redirige avec options avancées (`skipLocationChange`, `replaceUrl`)
+- **`RedirectCommand`** : redirige avec options avancées (`skipLocationChange`, `replaceUrl`)
 - **`withNavigationErrorHandler(fn)`** : handler global dans `provideRouter()` ; peut retourner `RedirectCommand` pour convertir une erreur resolver en redirection propre (émet `NavigationCancel` au lieu de `NavigationError`)
 
 # 8. Routes Spéciales et Organisation
 
 ## Route 404 et Redirections
 
-- Route wildcard `**` capture toutes les URLs non matchées, doit être en dernière position
 - `redirectTo` avec `pathMatch: 'full'` pour les redirections exactes
-- `redirectTo` peut être une fonction retournant `string | UrlTree | Observable<...> | Promise<...>` depuis Angular 20 (redirections asynchrones)
+- `redirectTo` peut être une fonction, y compris asynchrone (`Observable`, `Promise`)
 
 ```typescript
 export const routes: Routes = [
@@ -390,27 +317,9 @@ export const routes: Routes = [
 ];
 ```
 
-## Organisation Multi-fichiers
-
-- Séparation des routes par feature dans des fichiers dédiés (ex: `products.routes.ts`, `admin.routes.ts`)
-- Import et composition dans `app.routes.ts` pour maintenir la maintenabilité
-
-```typescript
-// products.routes.ts
-export const PRODUCT_ROUTES: Routes = [
-  { path: '', component: ProductListComponent },
-  { path: ':id', component: ProductDetailComponent }
-];
-
-// app.routes.ts
-export const routes: Routes = [
-  { path: 'products', children: PRODUCT_ROUTES },
-];
-```
-
 ## onSameUrlNavigation
 
 - Par défaut (`'ignore'`) : naviguer vers l'URL courante émet `NavigationSkipped` sans ré-exécuter guards ni resolvers
 - `'reload'` : force la ré-exécution des guards et resolvers sans recréer les composants (nécessite aussi `RouteReuseStrategy` pour recréer les composants)
 - Configurable globalement via `withRouterConfig({ onSameUrlNavigation: 'reload' })`
-- `runGuardsAndResolvers` au niveau de la route permet un contrôle plus fin que `onSameUrlNavigation` global : `'paramsChange'`, `'paramsOrQueryParamsChange'`, `'always'` ou fonction personnalisée
+- `runGuardsAndResolvers` au niveau de la route permet un contrôle plus fin que `onSameUrlNavigation` global (ex : `'paramsChange'`, ou fonction personnalisée)

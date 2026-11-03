@@ -75,17 +75,28 @@ Abréviations : `R:x.y.z` = `https://github.com/pydantic/pydantic-ai/releases/ta
 
 Non confirmés : #54 introuvable (Restate reste sur `RestateAgent`, #34) ; #55 et #56 laissés hors leçons (la leçon harness cite le défaut actuel sans version, la leçon realtime n'utilise que `XaiRealtimeModel(...)`).
 
+## Écartés
+
+Changements confirmés mais sans valeur pour une leçon (cf. skill lesson-doc § Conventions de format > Chapitres, Valeur avant exhaustivité). Aucun n'est assigné à une leçon.
+
+| # | Changement | Raison |
+|---|------------|--------|
+| 14 | Hooks de capability `get_model()` / `resolve_model_id()` | Niche : hooks rarement utiles, réservés à l'auteur de capability avancée |
+| 18 | `MCPToolset` compatible FastMCP 4 et MCP SDK v2 | Détail de compatibilité de dépendance, sans effet sur le code écrit |
+| 37 | UI adapters : `Content-Type` JSON obligatoire | Détail sans enjeu : un client standard envoie déjà du JSON |
+| 52 | Harness : `ExaSearch(native=)` / `YouSearch(native=)`, `web_search_tool()` | Niche : option d'un provider de recherche marginal, à laisser à la doc officielle |
+
 ## Décisions de structure
 
 | Leçon | Action | Changements | Justification |
 |-------|--------|-------------|---------------|
 | `fondamentaux-agents` | modifier | #1, #2, #3, #4, #5, #6, #7, #8, #9, #10 | Canonique pour `Agent`, providers, `RunContext`, exécution, `RunUsage` |
-| `capabilities-hooks-specs` | modifier | #1, #11, #12, #13, #14, #15, #42, #43, #44, #45 | Canonique pour la primitive capability, les hooks et les Agent Specs |
-| `tools-toolsets-mcp` | modifier | #1, #16, #17, #18, #19, #20, #42 | Canonique pour tools, toolsets, native tools, MCP et deferred tools |
+| `capabilities-hooks-specs` | modifier | #1, #11, #12, #13, #15, #42, #43, #44, #45 | Canonique pour la primitive capability, les hooks et les Agent Specs |
+| `tools-toolsets-mcp` | modifier | #1, #16, #17, #19, #20, #42 | Canonique pour tools, toolsets, native tools, MCP et deferred tools |
 | `output-messages-streaming-multimodal` | modifier | #1, #21, #22, #23, #24 | Canonique pour output, streaming et message history ; doublon `RunUsage` retiré (canonique dans fondamentaux-agents) |
 | `multi-agent-graphs-durable` | modifier | #1, #9, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35 | Canonique pour délégation, `UsageLimits`, pydantic-graph, durable execution, A2A |
-| `harness` | créer | #15, #26, #29, #49, #50, #51, #52, #53 | Package séparé de 50+ capabilities, bloc mental qu'aucune leçon ne porte |
-| `interfaces-evals-observabilite` | modifier | #1, #36, #37, #38, #39, #40, #41 | Canonique pour UI adapters, pydantic-evals, Logfire |
+| `harness` | créer | #15, #26, #29, #49, #50, #51, #53 | Package séparé de 50+ capabilities, bloc mental qu'aucune leçon ne porte |
+| `interfaces-evals-observabilite` | modifier | #1, #36, #38, #39, #40, #41 | Canonique pour UI adapters, pydantic-evals, Logfire |
 | `realtime` | créer | #2, #46, #47, #48 | Domaine voix (5 providers, 3 transports, tours, barge-in) qu'aucune leçon ne porte ; API hors module `beta` |
 
 - **bump seul** : aucun contenu modifié, seule `last_version` change dans l'index
@@ -154,7 +165,7 @@ Seules les leçons à modifier ou à créer ont une section. La source d'une fus
 - [#43] Chapitre 2 : signature `PrepareTools` sans `| None`
 - [#11, #45] Chapitre 3. Lifecycle hooks : 7 étapes × 4 variantes, ordre `wrap` → `before` → opération → `after` → `wrap`, `> ⚠️` breaking 2.54, portée de `on_*_error`, node hooks et exception `run_stream()`
 - [#13] Chapitre 3 : sous-section Événements typés
-- [#12, #14] Chapitre 4. Écrire une capability custom : `id` et `combine()`, `> ⚠️` breaking 2.38, `get_model()` / `resolve_model_id()`
+- [#12] Chapitre 4. Écrire une capability custom : `id` et `combine()`, `> ⚠️` breaking 2.38
 - [#44] Chapitre 6. Agent Specs : champs réels (`model` optionnel, sans `instrument`), templating validé contre `deps_type` / `deps_schema`, sous-section Capability custom dans une spec (`custom_capability_types`)
 
 **Points à garder en tête pour le skill :**
@@ -170,7 +181,7 @@ Seules les leçons à modifier ou à créer ont une section. La source d'une fus
 - [#1] Chapitre 1 : retrait beta
 - [#16] Chapitre 2 : `ToolFailed` vs `ModelRetry`
 - [#42] Chapitre 4. Native Tools : `WebSearch` / `WebFetch` native-only par défaut, `local=` et exemple portable
-- [#17, #18] Chapitre 5. MCP : `tool_error_behavior`, FastMCP 3 ou 4
+- [#17] Chapitre 5. MCP : `tool_error_behavior`
 - [#19, #20] Chapitre 6 : sous-section Approbation conditionnelle via args_validator, `HandleDeferredToolCalls`
 
 ---
@@ -218,7 +229,6 @@ Seules les leçons à modifier ou à créer ont une section. La source d'une fus
 - **SubAgents** : `delegate_task`, deps et usage forwardés, plus de chargement disque implicite, `inherit_tools` déprécié (#26, #50)
 - **Compaction** : `TieredCompaction` par défaut recommandé, `ProcessHistory` reste la voie core (renvoi capabilities-hooks-specs)
 - **StepPersistence** : remplace `pydantic_graph.persistence` côté agent runs, complète la durable execution sans la remplacer (#29)
-- **ExaSearch vs WebSearch** : piège du conflit de nom `web_search` (#52)
 - **BackgroundTools** : une exception inattendue termine le run (#53)
 
 ---
@@ -229,7 +239,7 @@ Seules les leçons à modifier ou à créer ont une section. La source d'une fus
 
 **Changements à appliquer :**
 - [#1] Chapitre 1 : retrait beta, label 2.54
-- [#36, #37, #38] Chapitre 2. Interfaces frontend : `sdk_version`, `on_cancel`, `> ⚠️` sécurité des adapters
+- [#36, #38] Chapitre 2. Interfaces frontend : `sdk_version`, `on_cancel`, `> ⚠️` sécurité des adapters
 - [#39] Chapitre 3. Evals : `GEval`, evaluators agentiques
 - [#40, #41] Chapitre 5. Logfire : versions d'instrumentation (v5 défaut, v6 opt-in, v2 à v4 dépréciées), portée de `include_content=False`
 

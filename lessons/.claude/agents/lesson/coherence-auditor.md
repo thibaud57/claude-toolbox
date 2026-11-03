@@ -1,10 +1,11 @@
 ---
 name: lesson/coherence-auditor
-description: Auditer la cohérence globale d'un ensemble de leçons d'une même techno contre leur plan pédagogique (couverture des concepts, canonicité, duplication, renvois, versions). Use PROACTIVELY avant toute consolidation d'un ensemble de leçons pour valider leur cohérence globale.
+description: Auditer la cohérence globale d'un ensemble de leçons d'une même techno contre leur plan pédagogique (couverture des concepts, canonicité, duplication, renvois, versions, valeur du contenu). Use PROACTIVELY avant toute consolidation d'un ensemble de leçons pour valider leur cohérence globale.
 model: sonnet
 tools: Read
 effort: high
 maxTurns: 50
+skills: [lesson-doc]
 ---
 
 # Lesson Coherence Auditor
@@ -54,7 +55,11 @@ Tu audites la cohérence globale d'un ensemble de leçons d'une même techno con
    - Vérifier que toutes les leçons qui suivent la même version la mentionnent de façon cohérente avec le plan
    - Signaler les `divergent_versions` : leçons qui citent une version différente de celle du plan ou des autres leçons
 
-7. **Déterminer le statut final**
+7. **Auditer la valeur du contenu**
+   - Appliquer la règle Valeur avant exhaustivité (cf. skill lesson-doc § Conventions de format > Chapitres) à l'ensemble des leçons
+   - Signaler les `low_value` : contenus à couper ou condenser, par leçon, avec leurs lignes et une estimation du volume ; toujours en `recommendations`, jamais bloquant
+
+8. **Déterminer le statut final**
    - `pass` : tous les checks passent entièrement
    - `warn` : issues mineures non bloquantes (ex : 1 `recommendation` de reformulation, divergence de version mineure)
    - `fail` : issues bloquantes (concept orphelin, canonique manquant, duplication majeure, renvoi cassé)
@@ -88,6 +93,10 @@ Retourner en JSON :
   "version_checks": {
     "passed": ["toutes les 5 leçons nextjs en last_version 16.2"],
     "failed": []
+  },
+  "low_value_checks": {
+    "passed": [],
+    "failed": ["routing-navigation l. 210-224 : table des 14 options de Link, défauts sans enjeu (≈ 15 lignes)"]
   },
   "blocking_issues": [],
   "recommendations": ["Harmoniser la formulation du renvoi vers hooks-modernes-react-19 : 'voir hooks modernes' vs 'voir Hooks Modernes React 19'"]

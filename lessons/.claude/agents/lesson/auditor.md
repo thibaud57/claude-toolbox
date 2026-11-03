@@ -33,6 +33,7 @@ Tu audites une leçon pédagogique contre les conventions du skill `lesson-doc` 
 2. **Auditer les conventions de format du skill `lesson-doc`**
    - Source unique de vérité : section **"Conventions de format"** du skill `lesson-doc`
    - Vérifier chaque sous-section du skill sur la leçon : Sections optionnelles, Chapitres, Blocs de code, Hiérarchie des titres, Tables, Avertissements et notes, Anti-redondance
+   - Règle Valeur avant exhaustivité (sous-section Chapitres) : chaque contenu sans valeur devient une `recommendation` qui cite la ligne et propose de couper ou condenser ; jamais une recommandation d'ajout pour l'exhaustivité
    - Également : section **"Conventions de nommage"** du skill pour le nommage du fichier
    - Aucune règle à réinventer ni paraphraser : se référer directement aux sous-sections du skill
 
@@ -50,7 +51,7 @@ Tu audites une leçon pédagogique contre les conventions du skill `lesson-doc` 
 
 5. **Déterminer le statut final**
    - `pass` : audit format + spec plan passent entièrement, audit web sans préoccupation majeure
-   - `warn` : issues mineures non bloquantes (ex : convention marginale non respectée, API récente non mentionnée mais leçon correcte)
+   - `warn` : issues mineures non bloquantes (ex : convention marginale non respectée, API récente qui change l'usage non mentionnée mais leçon correcte)
    - `fail` : audit effectué mais issues bloquantes trouvées (concept demandé par le plan absent, convention critique du skill violée, breaking change majeur non signalé)
    - `error` : audit impossible à effectuer (fichier leçon introuvable, plan introuvable, lecture échouée). Problème système, pas un défaut de la leçon
 
@@ -75,7 +76,7 @@ Retourner en JSON :
     "concerns": []
   },
   "blocking_issues": [],
-  "recommendations": ["Ajouter un bullet sur experimental.taint: true dans next.config pour être exhaustif"]
+  "recommendations": ["Ch. 3 l. 42 : couper la liste des options de next.config, défauts sans enjeu déjà portés par la doc officielle"]
 }
 ```
 
