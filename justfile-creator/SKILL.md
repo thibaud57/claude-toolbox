@@ -44,7 +44,7 @@ Justfile
 │   ├── db-migrate
 │   ├── db-reset
 │   ├── db-*                   (optionnel, outil de l'ORM : studio, seed…)
-│   └── db-test*               (optionnel, DB de test séparée)
+│   └── db-test*               (optionnel, DB de test séparée hors Python et TypeScript)
 └── Setup
     ├── install
     ├── setup
@@ -118,6 +118,7 @@ Recettes et sections marquées `(optionnel)` dans la Structure → omettre si no
 ### Infrastructure
 
 - Inclure si INFRA contient Docker : `docker-up` (`docker compose up -d`) et `docker-down`, plus `docker-logs` si l'image du projet est elle-même dans le compose
+- Local dans `compose.dev.yaml` : `-f compose.dev.yaml` sur chaque commande `docker compose`
 - Service sous `profiles:` dans le compose : `docker compose --profile <name> up -d`
 
 ### DB
@@ -133,7 +134,8 @@ Recettes et sections marquées `(optionnel)` dans la Structure → omettre si no
 - **`db-reset`** : `[confirm('…')]`, drop et recreate et migrate, **sans seed** — vérifier que la commande recrée bien le schéma, et neutraliser la confirmation propre à l'outil (`--force`) qui entrerait en conflit avec `[confirm]`
 
 **DB de test séparée (optionnel)**
-- Inclure si les tests d'intégration tournent sur une base distincte de la dev (Postgres ou MySQL partagés, où le wipe gênerait le dev) — inutile pour une base fichier ou un container éphémère par worker
+- Python et TypeScript : aucune recette, la suite crée et migre sa base `<base>_test` elle-même
+- Autres stacks : inclure si les tests d'intégration tournent sur une base distincte de la dev (Postgres ou MySQL partagés, où le wipe gênerait le dev) ; inutile pour une base fichier ou un container éphémère par worker
 - Recettes jumelles de celles de la dev, en `[script]` sourçant `.env.test` en première ligne ; `db-test-reset` neutralise le seed automatique si le CLI de l'ORM en a un (`--skip-seed` chez Prisma), les tests créant leurs fixtures
 
 ### Setup
@@ -160,7 +162,7 @@ test-integration:
     <commande>
 ```
 
-Fichier optionnel : `if [ -f ./.env.test ]; then set -a && . ./.env.test && set +a; fi`. Réserver ce pattern aux recettes qui consomment réellement cet env (`test-integration`, `db-test`), inutile sur `lint`, `typecheck` ou `build`.
+Jamais de sourcing sous condition (`if [ -f … ]`) : sans le fichier, la recette tournerait en silence sur le `.env` de dev. Réserver ce pattern aux recettes qui consomment réellement cet env (`test-integration`, `db-test`), inutile sur `lint`, `typecheck` ou `build`.
 
 ### Multi-apps
 
