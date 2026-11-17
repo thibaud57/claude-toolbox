@@ -18,9 +18,9 @@ Vérifié contre Just 1.58.0 le 2026-09-06 (manuel et changelog). Un setting vau
 | `default-script` | 1.52.0 | Toutes les recettes du module en `[script]` | `[shell]` exempte une recette ; perd l'écho ligne à ligne partout | Écarté, `[script]` au cas par cas |
 | `quiet` | 1.23.0 | Aucune commande n'est affichée avant exécution | `[no-quiet]` par recette pour réactiver ; les recettes `[script]` sont déjà silencieuses | Écarté : l'écho aide à lire un run, `check` garde ses `@` |
 | `working-directory`, `no-cd` | 1.33.0, 1.51.0 | Répertoire d'exécution de tout le module | Sans effet sur la recherche dotenv ni sur `shell()` | Écartés, `[working-directory]` par recette est plus lisible |
-| `positional-arguments` | ancien | `$1`, `$2`, `$@` dans les recettes shell | Casse PowerShell sauf pwsh 7.4 | Écarté, `{{ ARGS }}` d'un paramètre variadique suffit |
+| `positional-arguments` | ancien | `$1`, `$2`, `$@` dans les recettes shell | Casse PowerShell sauf pwsh 7.4 | Écarté pour tout le module : `[positional-arguments]` sur les seules recettes à paramètre variadique, l'attribut signale sur la recette qu'elle lit `$@` |
 | `indentation` | 1.56.0 | Indentation de `--fmt` et `--dump` (défaut quatre espaces) | Format non garanti stable entre versions | Écarté, le défaut convient |
-| `unstable`, `lists` | 1.31.0, 1.53.0 (instable) | Fonctionnalités instables, valeurs liste | `which()` et `[arg(min, max)]` exigent `lists` | Écartés tant qu'instables |
+| `unstable`, `lists` | 1.31.0, 1.53.0 (instable) | Fonctionnalités instables, valeurs liste | `which()` et `[arg(min, max)]` exigent `lists` ; avec `lists`, `quote(args)` cite chaque argument d'un variadique, alternative à `[positional-arguments]` | Écartés tant qu'instables |
 | `export` | ancien | Exporte toutes les variables Just comme variables d'environnement | Non exporté vers les backticks du même scope | Écarté, `dotenv-load` exporte déjà ce qui doit l'être |
 | `fallback` | stable 1.11.0 | Cherche un justfile parent si la recette n'existe pas localement | S'arrête au premier justfile sans `fallback` | Écarté, la racine du projet est connue |
 | `allow-duplicate-recipes`, `allow-duplicate-variables` | ancien, 1.27.0 | Autorise les redéfinitions au lieu d'une erreur | Piège documenté avec les imports | Écartés, une erreur de compilation vaut mieux |

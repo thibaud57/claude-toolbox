@@ -16,7 +16,7 @@ Vérifié contre Just 1.58.0 le 2026-09-06. Un attribut se place sur la ligne au
 | `[doc('texte')]` | 1.27.0 (recette), 1.32.0 (module) | Remplace le commentaire de description dans `--list` ; `[doc]` vide le supprime | — | Écarté, le commentaire au-dessus de la recette suffit |
 | `[no-cd]` | 1.9.0 | Exécution depuis le répertoire d'invocation | Sans effet sur dotenv ni `shell()` | Recette qui opère sur le cwd de l'utilisateur |
 | `[env('NOM', 'valeur')]` | 1.47.0 | Une variable d'environnement pour la recette | Une variable, pas un fichier | Flag ponctuel (`RUST_BACKTRACE`) |
-| `[positional-arguments]` | 1.29.0 | `$1`, `$@` pour cette recette | Casse PowerShell sauf pwsh 7.4 | Écarté, `{{ ARGS }}` suffit |
+| `[positional-arguments]` | 1.29.0 | `$1`, `$@` pour cette recette ; `"$@"` transmet chaque argument intact, espaces compris | Casse PowerShell sauf pwsh 7.4 (`-CommandWithArgs`) ; `$0` vaut le nom de la recette, un paramètre nommé avant le variadique se saute par `"${@:2}"` ; perd le contrôle des fautes de frappe de `{{ }}` | Toute recette dont le paramètre variadique part à une commande : `{{ ARGS }}` joint les arguments par des espaces que le shell redécoupe (`-k "a or b"` arrive en trois mots, manuel § Avoiding Argument Splitting) |
 | `[no-exit-message]`, `[exit-message]` | 1.7.0, 1.39.0 | Supprime ou réactive le message Just après l'échec d'une commande | — | Wrapper CLI (`git *args:`) |
 | `[no-quiet]` | 1.23.0 | Exempte une recette de `set quiet` | — | Écarté avec `set quiet` |
 | `[continue]`, `[continue(SIGNALS)]` | 1.54.0 | Continue après un signal si la commande sort proprement | SIGINT seul par défaut | Écarté, aucun processus du projet ne gère Ctrl+C lui-même |

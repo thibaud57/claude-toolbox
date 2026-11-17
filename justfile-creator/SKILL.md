@@ -101,7 +101,7 @@ Recettes et sections marquées `(optionnel)` dans la Structure → omettre si no
 
 - **`stop`** : inclure si serveur web/API, SPA, app desktop, ou bundler mobile persistant sur un port (Metro d'Expo et React Native, kill par port comme un dev-server web) — omettre si CLI (se termine seule) ou mobile sans bundler local (Flutter, processus géré par le framework). Variantes `[windows]` et `[unix]`, sauf si ARCHITECTURE.md ne déclare qu'un seul OS de développement : une recette sans attribut, l'autre variante serait du code mort
 - **Serveur avec `PORT` dans le header** : `[windows]` kill par port, `netstat -ano | awk '/:{{ PORT }} .*LISTENING/ {print $NF}' | sort -u | xargs -r -I{} taskkill //PID {} //T //F` ; `[unix]` kill par motif de commande, `pkill -f "<process>"`. **Kill par nom** sinon (desktop, worker) : `taskkill //IM <process>.exe //T //F` ou `pkill -f "<process>"`. Sigil `-` devant chaque ligne : rien à arrêter n'est pas une erreur. Le `//` est obligatoire depuis Git Bash, MSYS convertirait `/PID` en chemin Windows. PowerShell ne sert que pour retrouver un processus par sa ligne de commande (`Get-CimInstance Win32_Process`), quand ni le port ni le nom ne suffisent
-- **CLI** : `dev *ARGS:` et passer `{{ ARGS }}` (ex: `cargo run -- {{ ARGS }}`)
+- **CLI** : `[positional-arguments]` sur `dev *ARGS:` et passer `"$@"` (ex: `cargo run -- "$@"`) : `{{ ARGS }}` redécouperait un argument qui contient un espace (cf. `references/attributes.md`)
 - **Python** : `uv run <script>` si le paquet déclare sa CLI dans `[project.scripts]`, `uv run python -m <paquet>` si le livrable est un binaire PyInstaller construit sur `__main__.py`
 
 ### Quality
