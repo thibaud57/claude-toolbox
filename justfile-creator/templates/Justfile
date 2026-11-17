@@ -7,6 +7,7 @@ set shell := ["bash", "-cu"]
 set script-interpreter := ["bash", "-eu"] # si une recette porte [script]
 
 PORT := env("PORT", "<défaut>") # serveur seulement, cf. § Règles > Header
+ZIZMOR_VERSION := "<version>" # si .github/ existe
 
 # ── Dev ───────────────────────────────────────────────────────────────────────
 
@@ -40,7 +41,8 @@ build:
 lint:
     <commande lint selon STACK>
     <commande de vérification du formatage>
-    actionlint # si .github/workflows existe
+    actionlint # si .github/ existe
+    GH_TOKEN="${GH_TOKEN:-$(gh auth token)}" uvx zizmor@{{ ZIZMOR_VERSION }} . # si .github/ existe
 
 # Reformate le code et applique les fixes auto-corrigeables
 [group('quality')]
@@ -125,7 +127,8 @@ setup: <dépendances>
 check:
     @command -v <runtime> >/dev/null 2>&1 || echo "⚠️ <runtime> requis"
     @<vérification dépendances> || echo "⚠️ dépendances absentes, lancer just install"
-    @command -v actionlint >/dev/null 2>&1 || echo "⚠️ actionlint requis pour just lint (winget install rhysd.actionlint)" # si .github/workflows existe
+    @command -v actionlint >/dev/null 2>&1 || echo "⚠️ actionlint requis pour just lint (winget install rhysd.actionlint)" # si .github/ existe
+    @command -v uv >/dev/null 2>&1 || echo "⚠️ uv requis pour zizmor (just lint)" # si .github/ existe et uv n'est pas le runtime
     @[ -n "${<VAR requise>:-}" ] || echo "⚠️ <VAR requise> manquant dans .env" # une ligne par variable requise
     @<check service1> || echo "⚠️ <service1> non disponible"
     @<check service2> || echo "⚠️ <service2> non disponible"

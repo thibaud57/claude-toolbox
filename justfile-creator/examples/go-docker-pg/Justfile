@@ -7,6 +7,7 @@ set shell := ["bash", "-cu"]
 set script-interpreter := ["bash", "-eu"]
 
 PORT := env("PORT", "8080")
+ZIZMOR_VERSION := "1.32.0"
 
 # ── Dev ───────────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ lint:
     # `run` execute aussi les formateurs configures depuis la v2 : rien a verifier en plus
     golangci-lint run ./...
     actionlint
+    GH_TOKEN="${GH_TOKEN:-$(gh auth token)}" uvx zizmor@{{ ZIZMOR_VERSION }} .
 
 # Reformate le code
 [group('quality')]
@@ -133,6 +135,7 @@ setup: install db
 check:
     @command -v go >/dev/null 2>&1 || echo "⚠️ Go requis"
     @command -v actionlint >/dev/null 2>&1 || echo "⚠️ actionlint requis pour just lint (winget install rhysd.actionlint)"
+    @command -v uv >/dev/null 2>&1 || echo "⚠️ uv requis pour zizmor (just lint)"
     @command -v govulncheck >/dev/null 2>&1 || echo "⚠️ govulncheck requis pour just audit (go install golang.org/x/vuln/cmd/govulncheck@latest)"
     @docker info > /dev/null 2>&1 || echo "⚠️ Docker non disponible"
     @nc -z localhost 5432 2>/dev/null || echo "⚠️ PostgreSQL non disponible"
