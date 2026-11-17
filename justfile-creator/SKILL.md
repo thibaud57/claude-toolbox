@@ -31,7 +31,7 @@ Justfile
 │   ├── lint
 │   ├── format                 (optionnel, si le formateur sait réécrire)
 │   ├── typecheck              (optionnel)
-│   ├── lint-workflows         (optionnel, si .github/workflows existe)
+│   ├── lint-workflows         (optionnel, si .github/ existe)
 │   ├── test
 │   ├── test-*                 (optionnel)
 │   └── audit                  (optionnel, si le PM a une commande de vulnérabilités)
@@ -109,7 +109,7 @@ Recettes et sections marquées `(optionnel)` dans la Structure → omettre si no
 - **`build`** : omettre si le STACK ne compile ni n'empaquette (Python, PHP, Ruby) — omettre aussi si le build est délégué à une toolchain externe (EAS, Xcode, CI cloud), n'inclure que la part locale. Un package publié sur un registre garde son `build` local (`uv build`, `pnpm pack`, `cargo package`) ; la publication est le rôle du workflow CI déclenché par le tag, jamais d'une recette, un `publish` lancé d'un poste échappe à la CI et au tag
 - **`lint` et `format`** : `lint` vérifie sans rien réécrire (`ruff check` + `ruff format --check`, `eslint` + `prettier --check`), c'est ce que la CI appelle. `format` réécrit (`ruff format` + `ruff check --fix`, `prettier --write`) : recette séparée, jamais dans `lint`, et à omettre si le formateur du STACK ne sait que vérifier. Même partage pour un validateur de schéma : `prisma validate` dans `lint`, `prisma format` dans `format`, faute de mode vérification
 - **`typecheck`** : inclure si un vérificateur de types existe hors du build (mypy, `tsc --noEmit`) — omettre si le compilateur le fait (Go, Rust)
-- **`lint-workflows`** (ou repliée dans `lint` en repo mono-zone) : `actionlint` sur `.github/workflows/*.yml` dès qu'un tel dossier existe, ajoutée à l'alias `lint`. `check` avertit s'il manque (`command -v actionlint`), sans bloquer
+- **`lint-workflows`** (ou repliée dans `lint` en repo mono-zone) : dès que `.github/` existe, `actionlint` sur `.github/workflows/*.yml` puis `uvx zizmor@{{ ZIZMOR_VERSION }} .` (variable en tête du Justfile, seule source de la version, que la CI appelle par cette même recette), avec `GH_TOKEN="${GH_TOKEN:-$(gh auth token)}"` pour les audits en ligne. Ajoutée à l'alias `lint`. `check` avertit si `actionlint` ou `uv` manque (`command -v`), sans bloquer
 - **`audit`** : inclure dès que le PM expose une commande de vulnérabilités sans outil à installer (`uv audit`, `pnpm audit`, `govulncheck` ; `cargo audit` exige `cargo install`, donc non) — seuil et flags identiques à la CI quand PRODUCTION.md documente une politique de dépendances, valeurs par défaut sinon
 - **Tests** : nommage depuis TEST_STRATEGY (`test-unit`, `test-integration`, `test-e2e`), `test` enchaîne tout. Un seul type → `test:` directe, sans alias redondant. Multi-apps : `test-<app>` prime, même à type unique
 - **Seuil de couverture** : porté par la recette `test` (`--cov-fail-under=<seuil>`), jamais par la config du runner — sur un run ciblé la couverture globale est basse et l'habitude deviendrait de la désactiver. Une recette `coverage` séparée si la CI mesure autrement que `test` (ex: `coverage run -m pytest` puis `coverage report`), pour que le développeur reproduise exactement ce qu'elle fait
